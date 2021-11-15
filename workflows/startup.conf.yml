@@ -1,0 +1,8 @@
+---
+- shell:
+    - command: brew services restart yabai
+      description: Start yabai up
+
+- shell:
+    - command: brew services restart skhd
+      description: Start skhd up

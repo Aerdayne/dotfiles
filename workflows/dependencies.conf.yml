@@ -1,0 +1,22 @@
+---
+# MacOS only
+
+- defaults:
+    shell:
+      stdout: true
+      stderr: true
+
+- shell:
+    - command: /bin/bash -c 'if type xcode-select >/dev/null 2>&1; then echo 0; else xcode-select --install &>/dev/null; fi'
+      description: Install MacOS devtools
+
+- shell:
+    - command: /bin/bash -c 'if type brew >/dev/null 2>&1; then echo 0; else sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
+      description: Install brew if not already installed
+
+- shell:
+    - brew bundle --file ./configs/brew/Brewfile
+
+- shell:
+    - command: ./configs/macos/set-defaults.sh
+      description: Set MacOS defaults

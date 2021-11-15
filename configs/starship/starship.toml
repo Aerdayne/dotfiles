@@ -1,0 +1,107 @@
+add_newline = false
+
+# The first line uses a 'fill' module to emulate a right prompt
+# and print the current time.
+# Doing so as intended using 'right_format' results in a bugged
+# tab completion behaviour in fish - autocomplete suggestions simply
+# disappear off the screen during rotation.
+
+format = """
+$time\
+$hostname\
+$username\
+$docker_context\
+$directory\
+$git_branch\
+$git_commit\
+$git_status\
+$git_state\
+$cmd_duration\
+$jobs\
+$character
+"""
+
+[fill]
+disabled = false
+symbol = ' '
+
+[hostname]
+disabled = false
+ssh_only = true
+format =  "on [$hostname](bold fg:#ff8b92) "
+trim_at = ""
+
+[username]
+disabled = false
+style_user = "fg:#9cc4ff"
+style_root = "fg:#ffcb6b bold"
+format = "as [$user]($style) "
+show_always = false
+
+[docker_context]
+disabled = false
+style = "fg:#e1acff"
+only_with_files = true
+format = "via [🐋 $context](blue bold)"
+
+[directory]
+disabled = false
+format = "[$read_only]($read_only_style)[$path]($style) "
+truncation_length = 3
+truncate_to_repo = true
+truncation_symbol = "… /"
+style = "fg:#89ddff"
+read_only = "🔒 "
+read_only_style = "fg:#f07178"
+
+[git_branch]
+disabled = false
+style = "fg:#c792ea"
+
+[git_commit]
+disabled = false
+commit_hash_length = 6
+style = "fg:#ddffa7"
+tag_symbol = "🔖 "
+tag_disabled = false
+
+[git_status]
+disabled = false
+style = "fg:#82aaff"
+ahead = "[⇡ ${count}](fg:#ddffa7)"
+diverged = "⇕ [⇡ ${ahead_count}](fg:#ddffa7)[⇣ ${behind_count}](fg:#ff8b92)"
+behind = "[⇣ ${count}](fg:#ff8b92)"
+staged = '[++\($count\)](fg:#ddffa7)'
+deleted = "✘ "
+
+[git_state]
+disabled = false
+format = '[\($state( $progress_current of $progress_total)\)]($style) '
+style = "fg:#ffe585"
+
+[cmd_duration]
+disabled = false
+min_time = 3_000
+format = "took [$duration](bold fg:#a3f7ff) "
+show_milliseconds = true
+show_notifications = false
+min_time_to_notify = 5_000
+
+[jobs]
+disabled = false
+symbol = "+"
+style = "fg:#c3e88d"
+number_threshold = 2
+symbol_threshold = 1
+
+[character]
+disabled = false
+success_symbol = "[➜](fg:#ddffa7) "
+error_symbol = "[➜](fg:#ff8b92) "
+
+[time]
+disabled = false
+format = '[$time]($style) '
+time_format = "%T"
+style = "fg:#ffe585"
+utc_time_offset = "+3"

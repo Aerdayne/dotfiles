@@ -1,0 +1,16 @@
+code --install-extension bmalehorn.vscode-fish
+code --install-extension bungcip.better-toml
+code --install-extension castwide.solargraph
+code --install-extension eamodio.gitlens
+code --install-extension Equinusocio.vsc-community-material-theme
+code --install-extension Equinusocio.vsc-material-theme
+code --install-extension equinusocio.vsc-material-theme-icons
+code --install-extension mads-hartmann.bash-ide-vscode
+code --install-extension misogi.ruby-rubocop
+code --install-extension ms-azuretools.vscode-docker
+code --install-extension rebornix.ruby
+code --install-extension redhat.vscode-yaml
+code --install-extension shakram02.bash-beautify
+code --install-extension whizkydee.material-palenight-theme
+code --install-extension wingrunr21.vscode-ruby
+code --install-extension yzhang.markdown-all-in-one

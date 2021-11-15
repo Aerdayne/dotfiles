@@ -1,0 +1,29 @@
+---
+- defaults:
+    link:
+      create: true
+      relink: true
+    shell:
+      stdout: true
+      stderr: true
+
+- clean:
+    ~/:
+    ~/.config:
+    ~/.hammerspoon:
+
+- create:
+    - "~/.config"
+    - "~/.hammerspoon"
+
+- link:
+    "~/Library/Application Support/Code/User/settings.json": configs/vscode/settings.json
+    "~/Library/Application Support/Code/User/keybindings.json": configs/vscode/keybindings.json
+    ~/.yabairc: configs/yabai/.yabairc
+    ~/.skhdrc: configs/skhd/.skhdrc
+    ~/.hammerspoon/init.lua: configs/hammerspoon/init.lua
+    ~/.tmux.conf: configs/tmux/.tmux.conf
+
+- shell:
+  - command: bash -l './configs/vscode/install_extensions.sh'
+    description: Install VSCode extensions

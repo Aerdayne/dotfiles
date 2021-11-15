@@ -1,0 +1,51 @@
+---
+- defaults:
+    link:
+      create: true
+      relink: true
+    shell:
+      stdout: true
+      stderr: true
+
+- clean:
+    ~/:
+    ~/.config:
+    ~/.config/fish:
+    ~/.config/alacritty:
+
+- create:
+    - "~/.config"
+    - "~/.config/fish"
+    - "~/.config/alacritty"
+
+- link:
+    ~/.config/fish/config.fish: configs/fish/config.fish
+    ~/.config/fish/fish_variables:
+      path: configs/fish/fish_variables
+      force: true
+    ~/.config/fish/fish_plugins:
+      path: configs/fish/fish_plugins
+      force: true
+    ~/.config/fish/conf.d:
+      path: configs/fish/conf.d
+      force: true
+    ~/.config/alacritty/alacritty.yml:
+      path: configs/alacritty/alacritty.yml
+      force: true
+    ~/.config/starship.toml: configs/starship/starship.toml
+
+- shell:
+    - command: /bin/bash -c 'if grep --fixed-strings --line-regexp "$(which fish)" /etc/shells; then echo 0; else sudo /bin/bash -c \'echo "$(which fish)" >> /etc/shells\'; fi'
+      description: Add fish to /etc/shells if not added already
+
+- shell:
+    - command: /bin/bash -c 'chsh -s "$(which fish)"'
+      description: Change default shell to fish
+
+- shell:
+    - command: /bin/bash -c 'if type fisher >/dev/null 2>&1; then echo 0; else sudo "$(which fish)" -c \'curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher\'; fi'
+      description: Install fisher
+
+- shell:
+    - command: /bin/bash -c '$(which fish) -c \'fisher update\''
+      description: Download fisher packages listed in fish_plugins
