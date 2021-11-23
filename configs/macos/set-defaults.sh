@@ -4,6 +4,17 @@ set -e
 
 osascript -e 'tell application "System Preferences" to quit'
 
+osascript <<EOF
+tell application "System Events"
+    tell current desktop
+        set pictures folder to "/Users/aerdayne/wallpapers"
+        set picture rotation to 1
+        set random order to true
+        set change interval to 3600.0
+    end tell
+end tell
+EOF
+
 sudo --validate
 
 # https://www.defaults-write.com/
