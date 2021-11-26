@@ -11,6 +11,7 @@
     ~/:
     ~/.config:
     ~/.config/fish:
+    ~/.config/fish/conf.d:
     ~/.config/alacritty:
 
 - create:
@@ -49,3 +50,7 @@
 - shell:
     - command: /bin/bash -c '$(which fish) -c \'fisher update\''
       description: Download fisher packages listed in fish_plugins
+
+- shell:
+    - command: ./configs/asdf/install-plugins.sh
+      description: Install asdf plugins
