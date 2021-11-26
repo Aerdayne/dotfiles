@@ -20,7 +20,7 @@
     "terminal.ansiBrightCyan":"#a3f7ff",
     "terminal.ansiBrightWhite":"#ffffff"
   },
-  "solargraph.commandPath": "/Users/aerdayne/.rbenv/shims/solargraph",
+  "solargraph.commandPath": "/Users/aerdayne/.asdf/shims/solargraph",
   "terminal.integrated.defaultProfile.osx": "Fish",
   "terminal.integrated.profiles.osx": {
     "Fish": {
@@ -32,7 +32,7 @@
     }
   },
   "ruby.rubocop.suppressRubocopWarnings": true,
-  "ruby.rubocop.executePath": "",
+  "ruby.rubocop.executePath": "/Users/aerdayne/.asdf/shims/",
   "editor.tabSize": 2,
   "diffEditor.ignoreTrimWhitespace": false,
   "git.suggestSmartCommit": false,
@@ -41,5 +41,6 @@
   "terminal.external.osxExec": "Alacritty.app",
   "terminal.integrated.fontFamily": "Iosevka",
   "terminal.integrated.fontSize": 14.0,
-  "redhat.telemetry.enabled": false
+  "redhat.telemetry.enabled": false,
+  "ruby.rubocop.useBundler": false
 }

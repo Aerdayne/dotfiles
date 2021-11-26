@@ -18,6 +18,7 @@ $git_status\
 $git_state\
 $cmd_duration\
 $jobs\
+$ruby\
 $character
 """
 
