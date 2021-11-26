@@ -10,7 +10,7 @@
 
    After disabling SIP, restart again and run `sudo yabai --install-sa`.
 
-## Hints
+## Notes to future self
 
 - Dump current VSCode extensions
 

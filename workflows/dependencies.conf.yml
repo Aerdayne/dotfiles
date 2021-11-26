@@ -18,7 +18,7 @@
     - brew bundle --file ./configs/brew/Brewfile
 
 - shell:
-    - command: /usr/local/bin/fish ./configs/macos/set-defaults.sh
+    - command: /usr/local/bin/fish ./configs/wallpapers/download-wallpapers.sh
       description: Download wallpapers
 
 - shell:

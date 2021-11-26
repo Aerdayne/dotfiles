@@ -41,6 +41,5 @@
   "terminal.external.osxExec": "Alacritty.app",
   "terminal.integrated.fontFamily": "Iosevka",
   "terminal.integrated.fontSize": 14.0,
-  "redhat.telemetry.enabled": false,
-  "ruby.rubocop.useBundler": true
+  "redhat.telemetry.enabled": false
 }
