@@ -36,6 +36,7 @@ download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/036/076/1
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/035/469/244/4k/philipp-a-urlich-desert-b.jpg'
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/035/436/864/4k/philipp-a-urlich-cpncept307-3b.jpg'
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/034/155/104/4k/philipp-a-urlich-cpncept293.jpg'
+download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/043/973/119/large/philipp-a-urlich-cpncept381-d.jpg'
 
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/019/921/209/4k/laszlo-szabados-000.jpg'
 

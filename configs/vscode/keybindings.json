@@ -145,5 +145,17 @@
   {
       "key": "ctrl+n",
       "command": "explorer.newFile"
-  }
+},
+{
+    "key": "ctrl+shift+n",
+    "command": "explorer.newFolder"
+},
+{
+    "key": "shift+alt+r",
+    "command": "workbench.action.replaceInFiles"
+},
+{
+    "key": "shift+cmd+h",
+    "command": "-workbench.action.replaceInFiles"
+}
 ]
