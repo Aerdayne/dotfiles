@@ -54,3 +54,4 @@ download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/002/245/2
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/002/222/165/large/alena-aenami-mountains.jpg'
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/002/446/988/large/alena-aenami-mountains1k.jpg'
 
+download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/045/566/294/4k/alisher-mirzoev-wk3-07.jpg'
