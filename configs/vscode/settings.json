@@ -1,46 +1,45 @@
 {
   "workbench.colorTheme": "Palenight (Mild Contrast)",
   "workbench.colorCustomizations": {
-    "terminal.background":"#292d3e",
-    "terminal.foreground":"#d0d0d0",
-    "terminal.ansiBlack":"#292d3e",
-    "terminal.ansiRed":"#f07178",
-    "terminal.ansiGreen":"#c3e88d",
-    "terminal.ansiYellow":"#ffcb6b",
-    "terminal.ansiBlue":"#82aaff",
-    "terminal.ansiMagenta":"#c792ea",
-    "terminal.ansiCyan":"#89ddff",
-    "terminal.ansiWhite":"#959dcb",
-    "terminal.ansiBrightBlack":"#434758",
-    "terminal.ansiBrightRed":"#ff8b92",
-    "terminal.ansiBrightGreen":"#ddffa7",
-    "terminal.ansiBrightYellow":"#ffe585",
-    "terminal.ansiBrightBlue":"#9cc4ff",
-    "terminal.ansiBrightMagenta":"#e1acff",
-    "terminal.ansiBrightCyan":"#a3f7ff",
-    "terminal.ansiBrightWhite":"#ffffff"
+    "terminal.background": "#292d3e",
+    "terminal.foreground": "#d0d0d0",
+    "terminal.ansiBlack": "#292d3e",
+    "terminal.ansiRed": "#f07178",
+    "terminal.ansiGreen": "#c3e88d",
+    "terminal.ansiYellow": "#ffcb6b",
+    "terminal.ansiBlue": "#82aaff",
+    "terminal.ansiMagenta": "#c792ea",
+    "terminal.ansiCyan": "#89ddff",
+    "terminal.ansiWhite": "#959dcb",
+    "terminal.ansiBrightBlack": "#434758",
+    "terminal.ansiBrightRed": "#ff8b92",
+    "terminal.ansiBrightGreen": "#ddffa7",
+    "terminal.ansiBrightYellow": "#ffe585",
+    "terminal.ansiBrightBlue": "#9cc4ff",
+    "terminal.ansiBrightMagenta": "#e1acff",
+    "terminal.ansiBrightCyan": "#a3f7ff",
+    "terminal.ansiBrightWhite": "#ffffff"
   },
-  "solargraph.commandPath": "/Users/aerdayne/.asdf/shims/solargraph",
+  "solargraph.commandPath": "",
   "terminal.integrated.defaultProfile.osx": "Fish",
   "terminal.integrated.profiles.osx": {
     "Fish": {
-        "path": [
-          "/usr/local/bin/fish"
-        ],
-        "args": [],
-        "icon": "terminal-cmd"
+      "path": [
+        "/opt/homebrew/bin/fish"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
     }
   },
   "ruby.rubocop.suppressRubocopWarnings": true,
-  "ruby.rubocop.executePath": "/Users/aerdayne/.asdf/shims/",
+  "ruby.rubocop.executePath": "~/.asdf/shims/",
   "editor.tabSize": 2,
   "diffEditor.ignoreTrimWhitespace": false,
   "git.suggestSmartCommit": false,
   "markdown.extension.toc.updateOnSave": false,
-  "terminal.integrated.automationShell.osx": "/usr/local/bin/fish",
   "terminal.external.osxExec": "Alacritty.app",
   "terminal.integrated.fontFamily": "Iosevka",
   "terminal.integrated.fontSize": 14.0,
   "redhat.telemetry.enabled": false,
-  "ruby.rubocop.useBundler": false
+  "ruby.rubocop.useBundler": true
 }

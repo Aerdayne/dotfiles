@@ -6,6 +6,6 @@
 
 # Disabling SIP is required for yabai.
 # https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection
-# Note that this command is specific to my current MacOS, which is Mojave 10.14.6
+# The command below is for Apple Silicon.
 
-csrutil enable --without debug --without fs
+csrutil disable --with kext --with dtrace --with basesystem

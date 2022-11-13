@@ -6,6 +6,8 @@ function download_wallpaper
   curl -o $wallpaper_path "$argv"
 end
 
+mkdir ~/wallpapers
+
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/041/840/127/4k/david-frasheski-snowy-peaks.jpg'
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/025/591/810/4k/david-frasheski-cat-is-yelling-at-me-fin.jpg'
 

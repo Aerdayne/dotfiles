@@ -119,4 +119,5 @@ shift + alt - c : yabai -m space --layout stack
 
 .blacklist [
     "terminal"
+    "Wow"
 ]

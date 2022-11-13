@@ -14,8 +14,7 @@ window:
   padding:
     x: 10
     "y": 15
-
-background_opacity: 1.0
+  opacity: 1.0
 
 font:
   normal:
@@ -33,7 +32,6 @@ font:
   glyph_offset:
     x: 0
     "y": 0
-  use_thin_strokes: true
   size: 14.0
 
 draw_bold_text_with_bright_colors: true
@@ -57,7 +55,7 @@ colors:
     yellow: "0xffcb6b"
     blue: "0x82aaff"
     magenta: "0xc792ea"
-    cyan: "0x89ddff"
+    cyan: "0x499c93"
     white: "0x959dcb"
     purple: "0xc792ea"
     orange: "0xf78c6c"
@@ -81,7 +79,7 @@ colors:
     - { index: 21, color: "0x959dcb" }
 
 shell:
-  program: /usr/local/bin/fish
+  program: /opt/homebrew/bin/fish
   args:
     - --login
 
@@ -96,8 +94,9 @@ selection:
   save_to_clipboard: false
 
 scrolling:
-  history: 50000
+  history: 100000
   multiplier: 3
+  faux_multiplier: 3
 
 bell:
   animation: EaseOutExpo
@@ -122,3 +121,7 @@ key_bindings:
   - { key: Right, mods: Alt, chars: "\x1bf" } # Skip over a word to the right
   - { key: Back, mods: Alt, chars: "\x1b\x7f" } # Delete a word
   - { key: Back, mods: Command, chars: "\x15" } # Delete all symbols preceding cursor
+  - { key: PageUp, mods: Shift, action: ScrollPageUp }
+  - { key: PageDown, mods: Shift, action: ScrollPageDown }
+  - { key: End, mods: Shift, action: ScrollToBottom }
+  - { key: Home, mods: Shift, action: ScrollToTop }
