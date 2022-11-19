@@ -73,6 +73,7 @@ defaults write com.apple.finder "ShowPathbar" -bool "true" # Show path bar in th
 defaults write com.apple.finder "QuitMenuItem" -bool "true" # Enable quit button
 defaults write com.apple.finder "CreateDesktop" -bool "false" # Hide all icons on desktop
 defaults write com.apple.AppleMultitouchTrackpad "Dragging" -int 1 # Enable trackpad dragging
+defaults write com.apple.Accessibility "KeyRepeatDelay" -float 0.25
 
 killall Finder
 killall Dock

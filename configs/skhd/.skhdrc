@@ -49,13 +49,13 @@ shift + alt - q : yabai -m space --destroy
 
 # Create a new space and move the focused window
 shift + alt - n : /bin/bash -c "yabai -m space --create && \
-                  index=\"\$(yabai -m query --spaces --display | jq 'map(select(.\"native-fullscreen\" == 0))[-1].index')\" && \
+                  index=\"\$(yabai -m query --spaces --display | jq 'map(select(.\"is-native-fullscreen\" == false))[-1].index')\" && \
                   yabai -m window --space \"\${index}\" && \
                   yabai -m space --focus \"\${index}\""
 
 # Create a new space
 shift + alt - m : /bin/bash -c "yabai -m space --create && \
-                 index=\"\$(yabai -m query --spaces --display | jq 'map(select(.\"native-fullscreen\" == 0))[-1].index')\" && \
+                 index=\"\$(yabai -m query --spaces --display | jq 'map(select(.\"is-native-fullscreen\" == false))[-1].index')\" && \
                  yabai -m space --focus \"\${index}\""
 
 
