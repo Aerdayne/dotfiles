@@ -43,3 +43,5 @@ yabai -m rule --add app="^Preview$" manage=off
 yabai -m rule --add app="^OpenVPN" manage=off
 yabai -m rule --add app="^World of Wacraft Classic$" manage=off
 yabai -m rule --add app="^Notes" manage=off
+yabai -m rule --add app="^Finder" manage=off
+yabai -m rule --add app="^QuickTime Player" manage=off
