@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-# TODO: automate this somehow
+# TODO: automate this somehow.
+# This needs to be reexecuted whenever yabai binary is updated.
 # echo "$(whoami) ALL = (root) NOPASSWD: sha256:$(shasum -a 256 $(which yabai)) --load-sa" | sudo EDITOR='tee -a' visudo -f /private/etc/sudoers.d/yabai
 
 sudo yabai --load-sa                                         # https://github.com/koekeishiya/yabai/wiki/Installing-yabai-(latest-release)
