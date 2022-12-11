@@ -8,7 +8,7 @@
 
    This will disable SIP and enable certain features of yabai.
 
-   After disabling SIP, restart again and run `sudo yabai --install-sa`.
+   After rebooting, execute `sudo nvram boot-args=-arm64e_preview_abi` and then **reboot again**.
 
 ## Notes to future self
 
