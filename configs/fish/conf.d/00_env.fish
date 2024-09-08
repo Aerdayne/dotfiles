@@ -14,3 +14,4 @@ set -xg PATH /bin/ $PATH
 set -xg PATH /usr/bin/ $PATH
 set -xg PATH /usr/local/bin/ $PATH
 set -xg PATH /usr/local/sbin/ $PATH
+set -xg PATH $HOME/.cargo/bin $PATH

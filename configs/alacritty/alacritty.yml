@@ -3,7 +3,7 @@ window:
   dimensions:
     columns: 0
     lines: 0
-  decorations: none
+  decorations: buttonless
   dynamic_title: true
   offset:
     x: 0
@@ -38,37 +38,36 @@ draw_bold_text_with_bright_colors: true
 
 custom_cursor_colors: true
 
-# Taken from https://github.com/aarowill/base16-alacritty/blob/master/colors/base16-material-palenight-256.yml
+# Material Palenight https://github.com/aarowill/base16-alacritty/blob/master/colors/base16-material-palenight-256.yml
+# Grubvox Dark: https://gist.github.com/firat/864e21d8d0a64dcf62ca9ba107cc2b0f
 colors:
   primary:
-    background: "0x292d3e"
-    foreground: "0xd0d0d0"
+    background: '0x1d2021'
+    foreground: '0xd5c4a1'
 
   cursor:
-    text: "0x292d3e"
-    cursor: "0x959dcb"
+    text: '0x1d2021'
+    cursor: '0xd5c4a1'
 
   normal:
-    black: "0x292d3e"
-    red: "0xf07178"
-    green: "0xc3e88d"
-    yellow: "0xffcb6b"
-    blue: "0x82aaff"
-    magenta: "0xc792ea"
-    cyan: "0x499c93"
-    white: "0x959dcb"
-    purple: "0xc792ea"
-    orange: "0xf78c6c"
+    black:   '0x1d2021'
+    red:     '0xfb4934'
+    green:   '0xb8bb26'
+    yellow:  '0xfabd2f'
+    blue:    '0x83a598'
+    magenta: '0xd3869b'
+    cyan:    '0x8ec07c'
+    white:   '0xd5c4a1'
 
   bright:
-    black: "0x434758"
-    red: "0xff8b92"
-    green: "0xddffa7"
-    yellow: "0xffe585"
-    blue: "0x9cc4ff"
-    magenta: "0xe1acff"
-    cyan: "0xa3f7ff"
-    white: "0xffffff"
+    black:   '0x665c54'
+    red:     '0xfb4934'
+    green:   '0xb8bb26'
+    yellow:  '0xfabd2f'
+    blue:    '0x83a598'
+    magenta: '0xd3869b'
+    cyan:    '0x8ec07c'
+    white:   '0xfbf1c7'
 
   indexed_colors:
     - { index: 16, color: "0xf78c6c" }

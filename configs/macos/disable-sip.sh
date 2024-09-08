@@ -8,4 +8,4 @@
 # https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection
 # The command below is for Apple Silicon.
 
-csrutil disable --with kext --with dtrace --with basesystem
+csrutil enable --without fs --without debug --without nvram

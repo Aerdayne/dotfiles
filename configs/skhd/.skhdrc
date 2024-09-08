@@ -70,6 +70,9 @@ alt - 7 : yabai -m space --focus 7
 alt - 8 : yabai -m space --focus 8
 alt - 9 : yabai -m space --focus 9
 
+ctrl - left : yabai -m space --focus prev
+ctrl - right : yabai -m space --focus next
+
 # Send focused window to a specified space
 shift + cmd - 1 : yabai -m window --space 1; yabai -m space --focus 1
 shift + cmd - 2 : yabai -m window --space 2; yabai -m space --focus 2
@@ -82,18 +85,25 @@ shift + cmd - 8 : yabai -m window --space 8; yabai -m space --focus 8
 shift + cmd - 9 : yabai -m window --space 9; yabai -m space --focus 9
 
 # Focus monitor
-ctrl + alt - 1 : yabai -m display --focus 1
-ctrl + alt - 2 : yabai -m display --focus 2
+ctrl + cmd - 1 : yabai -m display --focus 1
+ctrl + cmd - 2 : yabai -m display --focus 2
+ctrl + cmd - 3 : yabai -m display --focus 3
 
 # Send focused window to a specfic monitor
-ctrl + cmd - 1 : yabai -m window --display 1; yabai -m display --focus 1
-ctrl + cmd - 2 : yabai -m window --display 2; yabai -m display --focus 2
+ctrl + alt - 1 : yabai -m window --display 1; yabai -m display --focus 1
+ctrl + alt - 2 : yabai -m window --display 2; yabai -m display --focus 2
+ctrl + alt - 3 : yabai -m window --display 3; yabai -m display --focus 3
 
 # Set insertion point of a focused window
 shift + cmd - h : yabai -m window --insert west
 shift + cmd - j : yabai -m window --insert south
 shift + cmd - k : yabai -m window --insert north
 shift + cmd - l : yabai -m window --insert east
+
+# Move space to the left
+hyper - left : yabai -m space --move prev
+# Move space to the right
+hyper - right : yabai -m space --move next
 
 # Rotate space
 alt - r : yabai -m space --rotate 90

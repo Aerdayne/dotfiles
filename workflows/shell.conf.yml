@@ -36,19 +36,19 @@
     ~/.config/starship.toml: configs/starship/starship.toml
 
 - shell:
-    - command: /bin/bash -c 'if grep --fixed-strings --line-regexp "$(which fish)" /etc/shells; then echo 0; else sudo /bin/bash -c \'echo "$(which fish)" >> /etc/shells\'; fi'
+    - command: /bin/bash -c 'if grep --fixed-strings --line-regexp /opt/homebrew/bin/fish /etc/shells; then echo 0; else /bin/bash -c "echo /opt/homebrew/bin/fish | sudo tee -a /etc/shells"; fi'
       description: Add fish to /etc/shells if not added already
 
 - shell:
-    - command: /bin/bash -c 'chsh -s "$(which fish)"'
+    - command: /bin/bash -c 'chsh -s /opt/homebrew/bin/fish'
       description: Change default shell to fish
 
 - shell:
-    - command: /bin/bash -c 'if type fisher >/dev/null 2>&1; then echo 0; else sudo "$(which fish)" -c \'curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher\'; fi'
+    - command: /bin/bash -c 'if type fisher >/dev/null 2>&1; then echo 0; else /opt/homebrew/bin/fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"; fi'
       description: Install fisher
 
 - shell:
-    - command: /bin/bash -c '$(which fish) -c \'fisher update\''
+    - command: /bin/bash -c '/opt/homebrew/bin/fish -c "fisher update"'
       description: Download fisher packages listed in fish_plugins
 
 - shell:
