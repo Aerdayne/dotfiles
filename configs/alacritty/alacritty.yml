@@ -1,16 +1,10 @@
 window:
-  startup_mode: windowed
+  startup_mode: Windowed
   dimensions:
-    columns: 0
+    columns: 2
     lines: 0
   decorations: buttonless
   dynamic_title: true
-  offset:
-    x: 0
-    "y": 0
-  glyph_offset:
-    x: 0
-    "y": 0
   padding:
     x: 10
     "y": 15
@@ -35,8 +29,6 @@ font:
   size: 14.0
 
 draw_bold_text_with_bright_colors: true
-
-custom_cursor_colors: true
 
 # Material Palenight https://github.com/aarowill/base16-alacritty/blob/master/colors/base16-material-palenight-256.yml
 # Grubvox Dark: https://gist.github.com/firat/864e21d8d0a64dcf62ca9ba107cc2b0f
@@ -84,9 +76,6 @@ shell:
 
 mouse:
   hide_when_typing: true
-  hints:
-    launcher: open
-    modifiers: Command
 
 selection:
   semantic_escape_chars: ",│`|:\"' ()[]{}<>\t"
@@ -95,14 +84,11 @@ selection:
 scrolling:
   history: 100000
   multiplier: 3
-  faux_multiplier: 3
 
 bell:
   animation: EaseOutExpo
-  color: "0x444267"
+  color: "#444267"
   duration: 2
-
-dynamic_title: true
 
 key_bindings:
   - { key: V, mods: Command, action: Paste }

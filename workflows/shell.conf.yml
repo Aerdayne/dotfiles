@@ -30,8 +30,8 @@
     ~/.config/fish/conf.d:
       path: configs/fish/conf.d
       force: true
-    ~/.config/alacritty/alacritty.yml:
-      path: configs/alacritty/alacritty.yml
+    ~/.config/alacritty/alacritty.toml:
+      path: configs/alacritty/alacritty.toml
       force: true
     ~/.config/starship.toml: configs/starship/starship.toml
 
