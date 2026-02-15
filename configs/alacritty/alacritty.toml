@@ -192,7 +192,7 @@ opacity = 1.0
 startup_mode = "Windowed"
 
 [window.dimensions]
-columns = 2
+columns = 0
 lines = 0
 
 [window.padding]

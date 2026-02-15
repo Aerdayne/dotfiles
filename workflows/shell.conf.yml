@@ -20,7 +20,9 @@
     - "~/.config/alacritty"
 
 - link:
-    ~/.config/fish/config.fish: configs/fish/config.fish
+    ~/.config/fish/config.fish:
+      path: configs/fish/config.fish
+      force: true
     ~/.config/fish/fish_variables:
       path: configs/fish/fish_variables
       force: true

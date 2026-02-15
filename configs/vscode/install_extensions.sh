@@ -1,5 +1,4 @@
 code --install-extension bmalehorn.vscode-fish
-code --install-extension bungcip.better-toml
 code --install-extension castwide.solargraph
 code --install-extension eamodio.gitlens
 code --install-extension Equinusocio.vsc-community-material-theme

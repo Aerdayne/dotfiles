@@ -1,8 +1,18 @@
 ---
-- shell:
-    - command: brew services restart yabai
-      description: Start yabai up
+# enter recovery mode first and disable sip
 
 - shell:
-    - command: brew services restart skhd
+    - command: yabai --start-service
+      description: Start yabai up
+
+# the first run will request permissions, give them in the system settings
+
+# adjust the sudoer file using the commented out command in the disable-sip.sh
+
+# re-run the command above again
+
+- shell:
+    - command: skhd --start-service
       description: Start skhd up
+
+# the first run will request permissions, give them in the system settings

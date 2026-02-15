@@ -1,7 +1,7 @@
 window:
   startup_mode: Windowed
   dimensions:
-    columns: 2
+    columns: 0
     lines: 0
   decorations: buttonless
   dynamic_title: true

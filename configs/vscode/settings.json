@@ -1,5 +1,4 @@
 {
-  "workbench.colorTheme": "Gruvbox Dark Medium",
   "workbench.colorCustomizations": {
     "peekViewEditor.matchHighlightBackground": "#ff990043"
   },
@@ -11,7 +10,7 @@
       "path": [
         "/opt/homebrew/bin/fish"
       ],
-      "args": [],
+      "args": ["-l"],
       "icon": "terminal-cmd"
     }
   },
@@ -31,15 +30,33 @@
   "diffEditor.codeLens": true,
   "editor.inlineSuggest.enabled": true,
   "github.copilot.enable": {
-    "*": false,
-    "plaintext": true,
+    "*": true,
+    "plaintext": false,
     "markdown": false,
     "scminput": false,
-    "yaml": true
+    "yaml": false
   },
   "standardRuby.mode": "enableUnconditionally",
   "diffEditor.ignoreTrimWhitespace": false,
   "githubPullRequests.pullBranch": "never",
   "githubPullRequests.fileListLayout": "tree",
-  "gitlens.plusFeatures.enabled": false
+  "gitlens.plusFeatures.enabled": false,
+  "workbench.colorTheme": "Gruvbox Dark Medium",
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    },
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "editor.multiCursorModifier": "ctrlCmd",
+  "gitlens.ai.model": "vscode",
+  "gitlens.ai.vscode.model": "copilot:gpt-4.1"
 }

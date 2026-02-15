@@ -11,14 +11,14 @@
       description: Install MacOS devtools
 
 - shell:
-    - command: /bin/bash -c 'if type brew >/dev/null 2>&1; then echo 0; else sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
+    - command: /bin/bash -c 'if type brew >/dev/null 2>&1; then echo 0; else /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
       description: Install brew if not already installed
 
 - shell:
     - brew bundle --file ./configs/brew/Brewfile
 
 - shell:
-    - command: /usr/local/bin/fish ./configs/wallpapers/download-wallpapers.sh
+    - command: /opt/homebrew/bin/fish ./configs/wallpapers/download-wallpapers.sh
       description: Download wallpapers
 
 - shell:
