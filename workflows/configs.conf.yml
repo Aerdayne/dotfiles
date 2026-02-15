@@ -15,6 +15,7 @@
 - create:
     - "~/.config"
     - "~/.hammerspoon"
+    - "~/Library/Application Support/Code/User"
 
 - link:
     "~/Library/Application Support/Code/User/settings.json": configs/vscode/settings.json

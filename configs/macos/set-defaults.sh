@@ -2,12 +2,15 @@
 
 set -e
 
-osascript -e 'tell application "System Preferences" to quit'
+osascript -e 'tell application "System Settings" to quit' 2>/dev/null || true
 
-osascript <<EOF
+# Set desktop wallpaper folder with rotation
+# Note: requires Automation permission for Terminal in
+# System Settings > Privacy & Security > Automation
+osascript <<EOF || echo "Warning: could not set desktop wallpaper. Set it manually in System Settings > Wallpaper."
 tell application "System Events"
-    tell current desktop
-        set pictures folder to "~/wallpapers"
+    tell every desktop
+        set pictures folder to POSIX file "$HOME/wallpapers"
         set picture rotation to 1
         set random order to true
         set change interval to 3600.0
@@ -64,7 +67,7 @@ defaults write com.apple.dock "autohide" -bool "true" # Autohide Dock
 defaults write com.apple.dock "autohide-time-modifier" -float 0 # Make Dock appear and disappear instantly
 defaults write com.apple.dock "expose-animation-duration" -float 0.1 # Dock minimize animation
 defaults write com.apple.dock "mineffect" -string "scale" # Mission Control animations speed up
-defaults write com.apple.universalaccess "reduceMotion" -bool "true" # Make space swapping instant
+defaults write com.apple.Accessibility "ReduceMotionEnabled" -bool "true" # Make space swapping instant
 defaults write com.apple.dock "show-recents" -bool "false" # Hide recents from Dock
 defaults write com.apple.finder "QuitMenuItem" -bool "true" # Quit option in the Finder
 defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "true" # Show file extensions in the Finder

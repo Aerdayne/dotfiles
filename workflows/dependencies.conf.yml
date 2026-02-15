@@ -11,11 +11,16 @@
       description: Install MacOS devtools
 
 - shell:
-    - command: /bin/bash -c 'if type brew >/dev/null 2>&1; then echo 0; else /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
+    - command: /bin/bash -c 'if /opt/homebrew/bin/brew --version >/dev/null 2>&1; then echo 0; else NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
       description: Install brew if not already installed
 
 - shell:
-    - brew bundle --file ./configs/brew/Brewfile
+    - command: /opt/homebrew/bin/brew bundle --file ./configs/brew/Brewfile
+      description: Install brew packages
+
+- shell:
+    - command: xattr -dr com.apple.quarantine /Applications/Alacritty.app 2>/dev/null || true
+      description: Remove Alacritty quarantine flag
 
 - shell:
     - command: /opt/homebrew/bin/fish ./configs/wallpapers/download-wallpapers.sh
