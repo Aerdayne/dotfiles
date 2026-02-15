@@ -1,18 +1,23 @@
 ---
-# enter recovery mode first and disable sip
+- defaults:
+    shell:
+      stdout: true
+      stderr: true
+
+- shell:
+    - command: ./configs/macos/check-sip.sh
+      description: Check SIP is configured for yabai
+
+- shell:
+    - command: ./configs/yabai/setup-yabai-sudoers.sh
+      description: Configure yabai sudoers entry
 
 - shell:
     - command: yabai --start-service
-      description: Start yabai up
-
-# the first run will request permissions, give them in the system settings
-
-# adjust the sudoer file using the commented out command in the disable-sip.sh
-
-# re-run the command above again
+      description: Start yabai
 
 - shell:
     - command: skhd --start-service
-      description: Start skhd up
+      description: Start skhd
 
-# the first run will request permissions, give them in the system settings
+# First run will request Accessibility permissions in System Settings > Privacy & Security

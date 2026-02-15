@@ -1,11 +1,14 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 
-# WARNING: This script should be run while in the Recovery Mode.
-# To run it, open Utilities/Terminal while in recovery mode:
-# cd /Volumes/<drive name> && sh /Volumes/<drive name>/Users/<username>/dotfiles/configs/macos/disable-sip.sh
-
-# Disabling SIP is required for yabai.
+# Disabling SIP is required for yabai's scripting addition.
 # https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection
-# The command below is for Apple Silicon.
+#
+# This must be run in Recovery Mode (Apple Silicon):
+#   1. Shut down, hold power button until "Loading startup options" appears
+#   2. Options > Utilities > Terminal
+#   3. csrutil enable --without fs --without debug --without nvram
+#   4. Reboot
+#   5. sudo nvram boot-args=-arm64e_preview_abi
+#   6. Reboot again
 
 csrutil enable --without fs --without debug --without nvram

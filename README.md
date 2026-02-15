@@ -1,34 +1,50 @@
 # Dotfiles
 
-1. `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Aerdayne/dotfiles/master/install.sh)"`
-2. Run `./install`
-3. To enable all features of `yabai` SIP should be disabled.
+Personal dotfile setup for Apple Silicon Macbooks - opinionated and not guaranteed to work correctly.
 
-   Restart MacOS in the recovery mode and execute the contents of `configs/macos/disable-sip.sh`.
+## Setup
 
-   This will disable SIP and enable certain features of yabai.
+### 1. Disable SIP (required for yabai)
 
-   After rebooting, execute `sudo nvram boot-args=-arm64e_preview_abi` and then **reboot again**.
+Before running the installer, partially disable SIP:
 
-## Notes to future self
+1. Shut down, hold power button until "Loading startup options" appears
+2. Options > Utilities > Terminal
+3. Run: `csrutil enable --without fs --without debug --without nvram`
+4. Reboot
+5. Run: `sudo nvram boot-args=-arm64e_preview_abi`
+6. Reboot again
 
-- Dump current VSCode extensions
+Verify with `csrutil status` - should show `NVRAM Protections: disabled`.
 
-  `code --list-extensions`
+### 2. Install
 
-- Check SIP status
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Aerdayne/dotfiles/master/bootstrap.sh)"
+```
 
-  `csrutil status`
+This installs Xcode CLT (if needed), clones the repo, and runs `./install`.
 
-- Dump Brewfile
+First run will prompt for Accessibility permissions for yabai and skhd - grant them in System Settings > Privacy & Security.
 
-  `brew bundle dump`
+### 3. After yabai updates
 
----
+The yabai sudoers entry contains a sha256 hash of the binary. After `brew upgrade yabai`, re-run:
 
-## TODO
+```bash
+./configs/yabai/setup-yabai-sudoers.sh
+yabai --restart-service
+```
 
-- A VPN toggle keybind & menu bar icon
-- Ubersicht & simple-bar
-- Google calendar integration
-- Finer tmux configuration
+### 4. Launch apps and accept prompts
+
+Launch each app installed via Brew and other means. MacOS will prompt for permissions and provide instructions where necessary.
+
+## Cheatsheet
+
+```bash
+code --list-extensions                      # dump VSCode extensions
+csrutil status                              # check SIP status
+brew bundle dump                            # dump Brewfile
+brew bundle --file ./configs/brew/Brewfile  # install from Brewfile
+```

@@ -1,12 +1,12 @@
-# !/usr/local/bin/fish
+#!/opt/homebrew/bin/fish
 
 function download_wallpaper
   set --local name (string split / $argv[1])
   set --local wallpaper_path ~/wallpapers/$name[-1]
-  curl -o $wallpaper_path "$argv"
+  curl -sS -o $wallpaper_path "$argv"
 end
 
-mkdir ~/wallpapers
+mkdir -p ~/wallpapers
 
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/041/840/127/4k/david-frasheski-snowy-peaks.jpg'
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/025/591/810/4k/david-frasheski-cat-is-yelling-at-me-fin.jpg'
@@ -43,6 +43,13 @@ download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/048/292/2
 download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/046/314/444/4k/philipp-a-urlich-cpncept398-b.jpg'
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/055/329/465/4k/philipp-a-urlich-cpncept469-2-small.jpg'
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/061/316/153/4k/philipp-a-urlich-cpncept524c.jpg'
+download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/054/727/768/4k/philipp-a-urlich-cpncept463-2.jpg'
+download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/089/169/866/4k/philipp-a-urlich-cpncept726.jpg'
+download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/067/011/494/4k/philipp-a-urlich-cpncept570c.jpg'
+download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/067/077/456/4k/philipp-a-urlich-cpncept572c.jpg'
+download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/043/973/651/4k/philipp-a-urlich-projekt2-b.jpg'
+download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/050/065/497/4k/philipp-a-urlich-cpncept430-3.jpg'
+download_wallpaper 'https://cdna.artstation.com/p/assets/images/images/054/135/166/4k/philipp-a-urlich-rb-landscape-clouds-04reb.jpg'
 
 download_wallpaper 'https://cdnb.artstation.com/p/assets/images/images/019/921/209/4k/laszlo-szabados-000.jpg'
 
