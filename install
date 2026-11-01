@@ -12,6 +12,8 @@ git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
 git submodule update --init --recursive "${DOTBOT_DIR}"
 
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c workflows/dependencies.conf.yml ${@}
+# On a fresh Mac, Homebrew isn't on PATH yet, and the steps below run tools it just installed
+eval "$(/opt/homebrew/bin/brew shellenv bash)"
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c workflows/shell.conf.yml ${@}
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c workflows/configs.conf.yml ${@}
 "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c workflows/startup.conf.yml ${@}

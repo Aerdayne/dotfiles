@@ -13,6 +13,10 @@
       description: Configure yabai sudoers entry
 
 - shell:
+    - command: launchctl bootout gui/$(id -u)/com.koekeishiya.yabai 2>/dev/null; rm -f ~/Library/LaunchAgents/com.koekeishiya.yabai.plist
+      description: Remove the pre-rename yabai service, which would run alongside com.asmvik.yabai
+
+- shell:
     - command: yabai --start-service
       description: Start yabai
 

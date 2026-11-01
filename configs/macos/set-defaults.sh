@@ -97,10 +97,12 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad UserPreference
 # Dock
 defaults write com.apple.dock "autohide" -bool "true" # Autohide Dock
 defaults write com.apple.dock "autohide-time-modifier" -float 0 # Make Dock appear and disappear instantly
-defaults write com.apple.dock "expose-animation-duration" -float 0.1 # Dock minimize animation
+defaults write com.apple.dock "expose-animation-duration" -float 0 # Minimize Mission Control/Expose animation duration
 defaults write com.apple.dock "mineffect" -string "scale" # Mission Control animations speed up
-defaults write com.apple.universalaccess reduceMotion -bool true # Make space swapping instant
-defaults write com.apple.Accessibility ReduceMotionEnabled -bool true
+# Reduce space transition motion (not always instant). macOS only lets terminals with Full Disk Access write these
+defaults write com.apple.universalaccess reduceMotion -bool true &&
+    defaults write com.apple.Accessibility ReduceMotionEnabled -bool true ||
+    echo "Warning: could not turn on Reduce motion. Turn it on in System Settings > Accessibility > Display."
 defaults write com.apple.dock "show-recents" -bool "false" # Hide recents from Dock
 
 # Finder
@@ -114,14 +116,31 @@ defaults write com.apple.finder "CreateDesktop" -bool "false" # Hide all icons o
 # 79/80 = Move left/right a space (ctrl+left/right), 81/82 = same with ctrl+arrow
 defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 79 "{enabled = 0;}" 80 "{enabled = 0;}" 81 "{enabled = 0;}" 82 "{enabled = 0;}"
 
+# Switch input source with ctrl+cmd+tilde (60), disable the alternate shortcut (61)
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 60 '{ enabled = 1; value = { parameters = (96, 50, 1310720); type = standard; }; }' 61 '{enabled = 0;}'
+
 # Keyboard
-defaults write -g InitialKeyRepeat -int 10 # Delay until key repeat (150ms)
+defaults write -g InitialKeyRepeat -int 25 # Delay until key repeat (375ms)
 defaults write -g KeyRepeat -int 2 # Key repeat rate (~30ms between repeats)
+
+# True Tone is switched on/off by configs/yabai/sync-true-tone.js depending on external displays
+
+# MonitorControl: write the saved brightness back to monitors when they reconnect (dock, wake),
+# instead of showing the saved value while the monitor comes back at its own brightness
+defaults write app.monitorcontrol.MonitorControl startupAction -int 1
+
+# Prevent sleep when connected to power
+sudo pmset -c displaysleep 0  # Never turn off display on charger
+sudo pmset -c sleep 0         # Never sleep on charger
+
+# Disable screen saver (lock screen still works)
+defaults -currentHost write com.apple.screensaver idleTime -int 0
 
 killall Finder
 killall Dock
 killall cfprefsd 2>/dev/null || true
 
 echo ""
-echo "Note: the following settings may need to be set manually on macOS Tahoe:"
+echo "Note: the following settings may need to be set manually:"
 echo "  - Wallpaper rotation: System Settings > Wallpaper"
+echo "  - Input source switching (Ctrl+Cmd+\`): System Settings > Keyboard > Keyboard Shortcuts > Input Sources"

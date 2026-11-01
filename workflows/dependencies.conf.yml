@@ -10,13 +10,18 @@
     - command: /bin/bash -c 'if type xcode-select >/dev/null 2>&1; then echo 0; else xcode-select --install &>/dev/null; fi'
       description: Install MacOS devtools
 
+# Homebrew's installer needs sudo, and unattended (NONINTERACTIVE) it won't ask for the password, so sudo asks first
 - shell:
-    - command: /bin/bash -c 'if /opt/homebrew/bin/brew --version >/dev/null 2>&1; then echo 0; else NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
+    - command: /bin/bash -c 'if /opt/homebrew/bin/brew --version >/dev/null 2>&1; then echo 0; else sudo --validate && NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; fi'
       description: Install brew if not already installed
 
 - shell:
-    - command: /opt/homebrew/bin/brew bundle --file ./configs/brew/Brewfile
-      description: Install brew packages
+    - command: /opt/homebrew/bin/brew trust --tap $(awk -F'"' '/^tap /{print $2}' ./configs/brew/Brewfile)
+      description: Trust the Brewfile's third-party taps (Homebrew refuses to load formulae from untrusted taps)
+
+- shell:
+    - command: /opt/homebrew/bin/brew bundle --no-upgrade --file ./configs/brew/Brewfile
+      description: Install missing brew packages (upgrades are left to brew upgrade, so re-running changes nothing)
 
 - shell:
     - command: xattr -dr com.apple.quarantine /Applications/Alacritty.app 2>/dev/null || true

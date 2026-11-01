@@ -36,6 +36,8 @@ The yabai sudoers entry contains a sha256 hash of the binary. After `brew upgrad
 yabai --restart-service
 ```
 
+If yabai doesn't come back (`could not access accessibility features` in `/tmp/yabai_$USER.err.log`), macOS hasn't trusted the new binary yet: enable the new `yabai` entry in System Settings > Privacy & Security > Accessibility, then run `yabai --start-service`.
+
 ### 4. Launch apps and accept prompts
 
 Launch each app installed via Brew and other means. MacOS will prompt for permissions and provide instructions where necessary.

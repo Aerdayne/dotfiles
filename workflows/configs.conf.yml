@@ -11,20 +11,39 @@
     ~/:
     ~/.config:
     ~/.hammerspoon:
+    ~/Library/Application Support/k9s:
+    ~/Library/Application Support/k9s/skins:
 
 - create:
     - "~/.config"
     - "~/.hammerspoon"
     - "~/Library/Application Support/Code/User"
+    - "~/Library/Application Support/k9s/skins"
+    - "~/.local/share/navi/cheats"
+    - "~/.tmux/scripts"
 
 - link:
     "~/Library/Application Support/Code/User/settings.json": configs/vscode/settings.json
     "~/Library/Application Support/Code/User/keybindings.json": configs/vscode/keybindings.json
+    "~/Library/Application Support/k9s/config.yaml": configs/k9s/config.yaml
+    "~/Library/Application Support/k9s/skins/gruvbox-dark.yaml": configs/k9s/skins/gruvbox-dark.yaml
     ~/.yabairc: configs/yabai/.yabairc
+    ~/.config/yabai/refresh-moved-spaces.sh: configs/yabai/refresh-moved-spaces.sh
+    ~/.config/yabai/focus-adjacent-space.sh: configs/yabai/focus-adjacent-space.sh
+    ~/.config/yabai/sync-true-tone.js: configs/yabai/sync-true-tone.js
+    ~/.config/yabai/recreate-space.sh: configs/yabai/recreate-space.sh
+    ~/.config/yabai/fix-notch-shield.sh: configs/yabai/fix-notch-shield.sh
     ~/.skhdrc: configs/skhd/.skhdrc
     ~/.hammerspoon/init.lua: configs/hammerspoon/init.lua
     ~/.tmux.conf: configs/tmux/.tmux.conf
+    ~/.tmux/scripts/sessionizer.sh: configs/tmux/scripts/sessionizer.sh
 
 - shell:
   - command: bash -l './configs/vscode/install_extensions.sh'
     description: Install VSCode extensions
+  - command: git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm 2>/dev/null || true
+    description: Install TPM (Tmux Plugin Manager)
+  - command: ~/.tmux/plugins/tpm/bin/install_plugins
+    description: Install tmux plugins
+  - command: bash './configs/navi/generate-cheats.sh' ~/.local/share/navi/cheats/dotfiles.cheat
+    description: Generate navi cheatsheet from config files

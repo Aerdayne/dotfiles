@@ -1,14 +1,29 @@
 #!/usr/bin/env sh
 
 # After yabai updates: ./configs/yabai/setup-yabai-sudoers.sh && yabai --restart-service
-sudo yabai --load-sa
-yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+# Without a matching sudoers entry this can't prompt for a password (no terminal), so say so instead
+load_sa='sudo -n yabai --load-sa || osascript -e "display notification \"Run configs/yabai/setup-yabai-sudoers.sh\" with title \"yabai: scripting addition not loaded\""'
+sh -c "$load_sa"
+yabai -m signal --add label=load_sa_on_dock_restart event=dock_did_restart action="$load_sa"
+
+# Recompute the layout of spaces dragged to another display in Mission Control (see the script)
+yabai -m signal --add label=refresh_moved_spaces_start event=mission_control_enter action="$HOME/.config/yabai/refresh-moved-spaces.sh start"
+yabai -m signal --add label=refresh_moved_spaces_stop event=mission_control_exit action="$HOME/.config/yabai/refresh-moved-spaces.sh stop"
+
+# True Tone only while the MacBook is used without external displays (see the script)
+yabai -m signal --add label=sync_true_tone_added event=display_added action="$HOME/.config/yabai/sync-true-tone.js"
+yabai -m signal --add label=sync_true_tone_removed event=display_removed action="$HOME/.config/yabai/sync-true-tone.js"
+"$HOME/.config/yabai/sync-true-tone.js"
+
+# Remove the black bar macOS sometimes leaves stuck behind the MacBook's menu bar (see the script)
+for event in space_changed display_added display_removed display_moved display_resized system_woke mission_control_exit; do
+    yabai -m signal --add label="fix_notch_shield_$event" event="$event" action="$HOME/.config/yabai/fix-notch-shield.sh $event"
+done
 
 yabai -m config mouse_follows_focus          off
 yabai -m config focus_follows_mouse          off
 yabai -m config window_placement             second_child
-yabai -m config window_topmost               off             # https://github.com/koekeishiya/yabai/issues/1156#issuecomment-1072417210
-yabai -m config window_shadow                off
+yabai -m config window_shadow               off
 yabai -m config window_opacity               off
 yabai -m config window_opacity_duration      0.10
 yabai -m config active_window_opacity        1.00
@@ -22,10 +37,6 @@ yabai -m config mouse_action1                move
 yabai -m config mouse_action2                resize
 yabai -m config mouse_drop_action            swap
 
-yabai -m config window_border                off
-yabai -m config window_border_width          4
-yabai -m config active_window_border_color   0xff676E95
-yabai -m config normal_window_border_color   0xff444267
 yabai -m config insert_feedback_color        0xffd75f5f
 
 yabai -m config layout                       bsp
@@ -39,7 +50,9 @@ yabai -m rule --add app="^System Settings$" manage=off
 yabai -m rule --add app="^Calculator$" manage=off
 yabai -m rule --add app="^Preview$" manage=off
 yabai -m rule --add app="^OpenVPN" manage=off
-yabai -m rule --add app="^World of Wacraft Classic$" manage=off
+yabai -m rule --add app="^Wow$" manage=off
+yabai -m rule --add app="^Noggit 3$" title!="^Noggit - " manage=off
 yabai -m rule --add app="^Notes" manage=off
 yabai -m rule --add app="^Finder" manage=off
 yabai -m rule --add app="^QuickTime Player" manage=off
+yabai -m rule --add title="^Picture in Picture$" manage=off sticky=on

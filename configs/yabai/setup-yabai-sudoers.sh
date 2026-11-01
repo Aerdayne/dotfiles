@@ -6,7 +6,9 @@
 
 set -e
 
-YABAI_BIN=$(realpath "$(which yabai)")
+# Use the path .yabairc runs (the Homebrew symlink), not its realpath: sudo matches the path as
+# invoked and doesn't resolve symlinks, so a rule for the Cellar path never matches `sudo yabai`
+YABAI_BIN=$(command -v yabai)
 YABAI_HASH=$(shasum -a 256 "$YABAI_BIN" | cut -d " " -f 1)
 SUDOERS_LINE="$(whoami) ALL=(root) NOPASSWD: sha256:${YABAI_HASH} ${YABAI_BIN} --load-sa"
 SUDOERS_FILE="/private/etc/sudoers.d/yabai"

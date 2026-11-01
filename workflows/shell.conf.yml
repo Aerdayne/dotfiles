@@ -42,11 +42,11 @@
       description: Add fish to /etc/shells if not added already
 
 - shell:
-    - command: /bin/bash -c 'chsh -s /opt/homebrew/bin/fish'
-      description: Change default shell to fish
+    - command: /bin/bash -c '[ "$(dscl . -read "/Users/$(id -un)" UserShell | cut -d " " -f 2)" = /opt/homebrew/bin/fish ] || chsh -s /opt/homebrew/bin/fish'
+      description: Change default shell to fish if it isn't already (chsh asks for the password)
 
 - shell:
-    - command: /bin/bash -c 'if type fisher >/dev/null 2>&1; then echo 0; else /opt/homebrew/bin/fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"; fi'
+    - command: /bin/bash -c 'if /opt/homebrew/bin/fish -c "type -q fisher"; then echo 0; else /opt/homebrew/bin/fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"; fi'
       description: Install fisher
 
 - shell:

@@ -1,21 +1,19 @@
 {
   "workbench.colorCustomizations": {
-    "peekViewEditor.matchHighlightBackground": "#ff990043"
+    "peekViewEditor.matchHighlightBackground": "#ff990043",
   },
   "solargraph.commandPath": "",
   "terminal.integrated.inheritEnv": false,
   "terminal.integrated.defaultProfile.osx": "Fish",
   "terminal.integrated.profiles.osx": {
     "Fish": {
-      "path": [
-        "/opt/homebrew/bin/fish"
-      ],
+      "path": ["/opt/homebrew/bin/fish"],
       "args": ["-l"],
-      "icon": "terminal-cmd"
-    }
+      "icon": "terminal-cmd",
+    },
   },
   "terminal.integrated.automationProfile.osx": {
-    "path": "/bin/sh"
+    "path": "/bin/sh",
   },
   "ruby.rubocop.suppressRubocopWarnings": true,
   "ruby.rubocop.executePath": "~/.asdf/shims/",
@@ -34,13 +32,12 @@
     "plaintext": false,
     "markdown": false,
     "scminput": false,
-    "yaml": false
+    "yaml": false,
   },
   "standardRuby.mode": "enableUnconditionally",
   "diffEditor.ignoreTrimWhitespace": false,
   "githubPullRequests.pullBranch": "never",
   "githubPullRequests.fileListLayout": "tree",
-  "gitlens.plusFeatures.enabled": false,
   "workbench.colorTheme": "Gruvbox Dark Medium",
   "[dockercompose]": {
     "editor.insertSpaces": true,
@@ -49,14 +46,29 @@
     "editor.quickSuggestions": {
       "other": true,
       "comments": false,
-      "strings": true
+      "strings": true,
     },
-    "editor.defaultFormatter": "redhat.vscode-yaml"
+    "editor.defaultFormatter": "redhat.vscode-yaml",
   },
   "[github-actions-workflow]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml"
+    "editor.defaultFormatter": "redhat.vscode-yaml",
   },
   "editor.multiCursorModifier": "ctrlCmd",
-  "gitlens.ai.model": "vscode",
-  "gitlens.ai.vscode.model": "copilot:gpt-4.1"
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+  },
+  "python.defaultInterpreterPath": "/opt/homebrew/bin/python3",
+  "ruff.path": [
+    "${userHome}/.local/share/mise/installs/ruff/0.6.4/ruff-aarch64-apple-darwin/ruff",
+  ],
+  "git.blame.editorDecoration.enabled": false,
+  "[helm]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "python.languageServer": "None",
+  "gitlens.ai.model": "gitkraken",
+  "gitlens.ai.gitkraken.model": "gemini:gemini-2.5-flash",
 }

@@ -1,5 +1,4 @@
-# Shamelessly yoinked from https://github.com/pgilad/dotfiles/blob/master/fish/conf.d/600_tmux.fish
-
+# Start a fresh tmux session in every new terminal window; pick existing sessions with prefix+f
 if command --search --query tmux
   and status is-login
   and not set --query TMUX

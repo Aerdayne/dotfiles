@@ -1,0 +1,75 @@
+# Gruvbox Dark skin for k9s - matches Alacritty terminal theme
+k9s:
+  body:
+    fgColor: '#d5c4a1'
+    bgColor: default
+    logoColor: '#fabd2f'
+  info:
+    fgColor: '#d5c4a1'
+    sectionColor: '#83a598'
+  frame:
+    border:
+      fgColor: '#665c54'
+      focusColor: '#83a598'
+    menu:
+      fgColor: '#d5c4a1'
+      keyColor: '#fabd2f'
+      numKeyColor: '#8ec07c'
+    crumbs:
+      fgColor: '#1d2021'
+      bgColor: '#83a598'
+      activeColor: '#fabd2f'
+    status:
+      newColor: '#83a598'
+      modifyColor: '#fabd2f'
+      addColor: '#83a598'
+      errorColor: '#fb4934'
+      highlightColor: '#fabd2f'
+      killColor: '#d3869b'
+      completedColor: '#665c54'
+    title:
+      fgColor: '#d5c4a1'
+      bgColor: default
+      highlightColor: '#fabd2f'
+      counterColor: '#83a598'
+      filterColor: '#d3869b'
+  views:
+    table:
+      fgColor: '#d5c4a1'
+      bgColor: default
+      cursorFgColor: '#1d2021'
+      cursorBgColor: '#83a598'
+      markColor: '#fabd2f'
+      header:
+        fgColor: '#fabd2f'
+        bgColor: default
+        sorterColor: '#8ec07c'
+    yaml:
+      keyColor: '#83a598'
+      colonColor: '#665c54'
+      valueColor: '#d5c4a1'
+    logs:
+      fgColor: '#d5c4a1'
+      bgColor: default
+      indicator:
+        fgColor: '#fabd2f'
+        bgColor: default
+        toggleOnColor: '#83a598'
+        toggleOffColor: '#665c54'
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - '#83a598'
+        - '#fb4934'
+      defaultChartColors:
+        - '#83a598'
+        - '#fb4934'
+  dialog:
+    fgColor: '#d5c4a1'
+    bgColor: default
+    buttonFgColor: '#1d2021'
+    buttonBgColor: '#83a598'
+    buttonFocusFgColor: '#1d2021'
+    buttonFocusBgColor: '#fabd2f'
+    labelFgColor: '#fabd2f'
+    fieldFgColor: '#d5c4a1'

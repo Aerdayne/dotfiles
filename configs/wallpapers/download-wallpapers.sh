@@ -3,7 +3,8 @@
 function download_wallpaper
   set --local name (string split / $argv[1])
   set --local wallpaper_path ~/wallpapers/$name[-1]
-  curl -sS -o $wallpaper_path "$argv"
+  test -e $wallpaper_path; and return # downloaded on an earlier run
+  curl -fsS -o $wallpaper_path "$argv"
 end
 
 mkdir -p ~/wallpapers

@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 
 # https://github.com/asdf-vm/asdf/issues/659
 
