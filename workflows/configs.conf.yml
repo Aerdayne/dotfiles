@@ -40,6 +40,8 @@
     ~/.tmux.conf: configs/tmux/.tmux.conf
     ~/.tmux/scripts/sessionizer.sh: configs/tmux/scripts/sessionizer.sh
     ~/.tmux/scripts/close-idle-sessions.sh: configs/tmux/scripts/close-idle-sessions.sh
+    ~/.tmux/scripts/save-sessions.sh: configs/tmux/scripts/save-sessions.sh
+    ~/.tmux/scripts/restore-sessions.sh: configs/tmux/scripts/restore-sessions.sh
     ~/.local/bin/moonlander: configs/moonlander/moonlander
     ~/.config/mise/config.toml: configs/mise/config.toml
     ~/.config/git/config: configs/git/config
@@ -52,3 +54,5 @@
     description: Check for git accounts
   - command: bash -l './configs/vscode/install_extensions.sh'
     description: Install VSCode extensions
+  - command: git clone --quiet https://github.com/tmux-plugins/tmux-resurrect ~/.tmux/plugins/tmux-resurrect 2>/dev/null || true
+    description: Install tmux-resurrect (saves the tmux sessions for after a reboot)
