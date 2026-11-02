@@ -54,5 +54,3 @@
     description: Check for git accounts
   - command: bash -l './configs/vscode/install_extensions.sh'
     description: Install VSCode extensions
-  - command: git clone --quiet https://github.com/tmux-plugins/tmux-resurrect ~/.tmux/plugins/tmux-resurrect 2>/dev/null || true
-    description: Install tmux-resurrect (saves the tmux sessions for after a reboot)
