@@ -27,7 +27,7 @@ done
 docker info >/dev/null 2>&1 || orb start
 
 # The latest compiled revision, and the firmware version Oryx built it for, which is the fork's branch
-query='query($id: String!) { layout(hashId: $id, geometry: "moonlander", revisionId: "latest") { revision { hashId qmkVersion title createdAt } } }'
+query='query($id: String!) { layout(hashId: $id, geometry: "moonlander", revisionId: "latest") { revision { hashId qmkVersion title createdAt layers { title position } } } }'
 revision=$(jq -n --arg query "$query" --arg id "$layout" '{query: $query, variables: {id: $id}}' |
     curl -fsS https://oryx.zsa.io/graphql -H 'Content-Type: application/json' --data @- | jq '.data.layout.revision')
 branch=firmware$(jq -r '.qmkVersion | tonumber | floor' <<<"$revision")
@@ -63,6 +63,11 @@ docker run --rm --volume "$qmk:/qmk_firmware" moonlander-qmk qmk compile --keybo
 firmware=$qmk/${keyboard//\//_}_$layout.bin
 if $flash; then
     zapp flash "$firmware"
+    # The layout now on the keyboard, which the Hammerspoon shortcut overlay draws
+    saved=$HOME/.local/share/moonlander
+    mkdir -p "$saved"
+    cp "$keymap/keymap.c" "$qmk/keyboards/$keyboard/keyboard.json" "$saved/"
+    jq '{revision: .hashId, layers: [.layers[] | {position, title}]}' <<<"$revision" >"$saved/layout.json"
 else
     echo "Firmware: $firmware"
 fi

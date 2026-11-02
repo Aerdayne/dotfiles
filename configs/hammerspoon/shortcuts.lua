@@ -1,4 +1,5 @@
--- Keyboard shortcut overlay: shows the shortcuts available in the focused app.
+-- Keyboard shortcut overlay: shows the shortcuts available in the focused app, as a list or on a
+-- drawing of the keyboard (Tab switches between them).
 -- It combines the app's own menu shortcuts (read through the Accessibility API), skhd and yabai,
 -- tmux and Alacritty in the terminal, your VS Code keybindings, the Hammerspoon bindings in
 -- init.lua and the common macOS shortcuts. Shortcuts that aren't in any menu, such as a web app's
@@ -456,7 +457,7 @@ local function tmuxGroups()
         { title = after, rows = tables.prefix },
         { title = "No prefix", rows = tables.root },
         { title = "Copy mode", rows = tables.copy },
-        -- Folded to one row until you press Tab or search, as it's longer than everything else together
+        -- Folded to one row until it's clicked or a search finds it, as it's longer than everything else together
         { title = after .. " (built in)", rows = collapseDigits(tmuxDefaults(prefix, custom)), folded = true },
     }
 end
@@ -606,6 +607,84 @@ function M.add(groupTitle, mods, key, label)
     table.insert(group.rows, { keys = { combo(mods, key) }, label = label })
 end
 
+-- Keyboards --------------------------------------------------------------------------------------
+
+-- The Moonlander's layout as `moonlander` (configs/moonlander) last flashed it: QMK's key positions,
+-- Oryx's keymap.c and the layer names
+local MOONLANDER = HOME .. "/.local/share/moonlander"
+local ZSA_VENDOR_ID = 0x3297
+
+local function readFile(path)
+    local file = io.open(path)
+    if not file then return nil end
+    local text = file:read("a")
+    file:close()
+    return text
+end
+
+-- Each layer's keycodes, from the LAYOUT_moonlander(…) arrays in keymap.c
+local function keymapLayers(text)
+    local layers = {}
+    for index, body in text:gmatch("%[(%d+)%]%s*=%s*LAYOUT_moonlander(%b())") do
+        local codes, depth, start = {}, 0, 2
+        for i = 2, #body - 1 do
+            local char = body:sub(i, i)
+            if char == "(" then depth = depth + 1 elseif char == ")" then depth = depth - 1 end
+            if char == "," and depth == 0 then
+                table.insert(codes, (body:sub(start, i - 1):gsub("%s", "")))
+                start = i + 1
+            end
+        end
+        local last = body:sub(start, -2):gsub("%s", "")
+        if last ~= "" then table.insert(codes, last) end
+        layers[tonumber(index) + 1] = codes
+    end
+    return layers
+end
+
+local moonlander = {}
+local function moonlanderLayout()
+    local attributes = hs.fs.attributes(MOONLANDER .. "/keymap.c")
+    if not attributes then return nil end
+    if moonlander.modified ~= attributes.modification then
+        local okGeometry, geometry = pcall(hs.json.decode, readFile(MOONLANDER .. "/keyboard.json") or "")
+        local okLayout, layout = pcall(hs.json.decode, readFile(MOONLANDER .. "/layout.json") or "")
+        local keys = {}
+        for _, key in ipairs(okGeometry and geometry and geometry.layouts and geometry.layouts.LAYOUT and geometry.layouts.LAYOUT.layout or {}) do
+            table.insert(keys, { x = key.x, y = key.y, w = key.w or 1, h = key.h or 1 })
+        end
+        local layers, names = keymapLayers(readFile(MOONLANDER .. "/keymap.c") or ""), {}
+        for _, layer in ipairs(okLayout and layout and layout.layers or {}) do names[layer.position + 1] = layer.title end
+        local valid = #keys > 0 and #layers > 0
+        for _, codes in ipairs(layers) do valid = valid and #codes == #keys end
+        moonlander = { modified = attributes.modification, data = valid and { keys = keys, layers = layers, names = names } or nil }
+    end
+    return moonlander.data
+end
+
+local function moonlanderAttached()
+    for _, device in ipairs(hs.usb.attachedDevices() or {}) do
+        if device.vendorID == ZSA_VENDOR_ID and (device.productName or ""):find("Moonlander") then return true end
+    end
+    return false
+end
+
+-- What the keyboard layout types on each key of the built-in keyboard, and its shape, from the reader
+local typedKeys
+local function readTypedKeys()
+    M.keysTask = hs.task.new(READER, function(code, output)
+        local ok, keys = pcall(hs.json.decode, output)
+        if code == 0 and ok then typedKeys = keys end
+    end, { "keys" })
+    M.keysTask:start()
+end
+
+-- The keyboard the keyboard view draws: the Moonlander while it's plugged in, else the built-in one
+local function keyboardData()
+    local layout = moonlanderAttached() and moonlanderLayout()
+    return { board = layout and "moonlander" or "builtin", moonlander = layout or nil, typed = typedKeys }
+end
+
 -- Overlay ----------------------------------------------------------------------------------------
 
 -- One row per action: "Paste and Match Style" with ⇧⌘V and ⌥⇧⌘V becomes one row with both keys.
@@ -664,10 +743,10 @@ M.groupsFor, M.readMenus = groupsFor, readMenus -- for testing from the `hs` com
 -- slightly see-through
 local CSS = [[
 :root { --bg: rgba(29, 32, 33, 0.97); --fg: #ebdbb2; --muted: #a89984; --faint: #7c6f64; --line: #32302f; --key: #282828;
-  --key-border: #504945; --app: #fabd2f; --config: #fe8019; --tmux: #b8bb26; --wm: #83a598; --hs: #d3869b; --mac: #8ec07c; }
+  --key-border: #504945; --app: #fabd2f; --config: #fe8019; --tmux: #b8bb26; --wm: #83a598; --hs: #d3869b; --mac: #8ec07c; --warn: #fb4934; }
 @media (prefers-color-scheme: light) {
   :root { --bg: rgba(251, 241, 199, 0.97); --fg: #3c3836; --muted: #7c6f64; --faint: #a89984; --line: #ebdbb2; --key: #f2e5bc;
-    --key-border: #d5c4a1; --app: #b57614; --config: #af3a03; --tmux: #79740e; --wm: #076678; --hs: #8f3f71; --mac: #427b58; }
+    --key-border: #d5c4a1; --app: #b57614; --config: #af3a03; --tmux: #79740e; --wm: #076678; --hs: #8f3f71; --mac: #427b58; --warn: #9d0006; }
 }
 html, body { margin: 0; height: 100%; background: transparent; }
 body { font: 13px/1.3 -apple-system, sans-serif; color: var(--fg); -webkit-user-select: none; cursor: default; }
@@ -680,7 +759,7 @@ h1 { font-size: 15px; font-weight: 600; margin: 0; }
 input { box-sizing: border-box; margin-left: auto; flex: 0 1 400px; min-width: 160px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--key-border);
   background: var(--key); color: var(--fg); font: inherit; outline: none; }
 .hint { color: var(--faint); font-size: 11px; border: 1px solid var(--key-border); border-radius: 4px; padding: 0 5px; }
-main { flex: 1; min-height: 0; display: flex; overflow-y: auto; }
+main { flex: 1; min-height: 0; display: flex; overflow-x: hidden; overflow-y: auto; }
 .area { flex: none; padding: 12px 18px 18px; }
 .everywhere { border-left: 1px solid var(--line); }
 .app[hidden] + .everywhere { border-left: none; }
@@ -708,6 +787,64 @@ kbd { font: 11.5px/17px -apple-system, sans-serif; padding: 0 5px; border-radius
 .or { color: var(--faint); font-size: 11px; padding: 0 1px; }
 mark { background: none; color: var(--app); font-weight: 600; }
 .empty { margin: auto; color: var(--muted); }
+
+/* The keyboard view: chips for the modifiers and layers, the keyboard, and the shortcuts under it */
+.board-view { box-sizing: border-box; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 18px 14px; }
+.board-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 12px/1 -apple-system, sans-serif; color: var(--fg); background: var(--key); border: 1px solid var(--key-border);
+  border-radius: 5px; padding: 4px 7px; display: inline-flex; align-items: center; gap: 5px; }
+.chip .n { font-size: 10px; color: var(--faint); }
+.chip:hover { border-color: var(--muted); }
+.chip.on { background: var(--fg); border-color: var(--fg); color: var(--key); }
+.chip.on .n { color: inherit; opacity: 0.7; }
+.chip.peek { outline: 2px solid var(--app); outline-offset: 1px; }
+.board { position: relative; flex: none; align-self: center; }
+.k { position: absolute; box-sizing: border-box; display: grid; grid-template-rows: auto 1fr; overflow: hidden; color: var(--fg);
+  background: var(--key); border: 1px solid var(--key-border); border-radius: calc(var(--u) * 0.13);
+  padding: calc(var(--u) * 0.05) calc(var(--u) * 0.08) calc(var(--u) * 0.08); }
+.k .lg { font: calc(var(--u) * 0.2)/1.05 ui-monospace, Menlo, monospace; color: var(--faint); white-space: nowrap; overflow: hidden; }
+.k .act { align-self: center; display: grid; justify-items: center; gap: 1px; min-width: 0; text-align: center; }
+.k .big { font-size: calc(var(--u) * 0.4); line-height: 1; font-weight: 600; }
+.k .small { font-size: calc(var(--u) * 0.17); line-height: 1.1; max-width: 100%; overflow: hidden; overflow-wrap: break-word;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.k .second { color: var(--muted); }
+.k.hit .small { -webkit-line-clamp: 2; }
+.k::after { content: ""; position: absolute; inset: auto 0 0 0; height: 3px; background: var(--src, transparent); }
+.k .mark { position: absolute; top: calc(var(--u) * 0.04); right: calc(var(--u) * 0.07); font: 700 calc(var(--u) * 0.2)/1 -apple-system, sans-serif;
+  color: var(--warn); }
+.s-app { --src: var(--app); } .s-config { --src: var(--config); } .s-tmux { --src: var(--tmux); }
+.s-wm { --src: var(--wm); } .s-hs { --src: var(--hs); } .s-mac { --src: var(--mac); }
+.k.bound { background: color-mix(in srgb, var(--src) 16%, var(--key)); border-color: color-mix(in srgb, var(--src) 50%, var(--key-border)); }
+.k.faint .act, .k.free .act { color: var(--faint); }
+.k.dead .act { color: var(--warn); }
+.k.free { border-style: dashed; }
+.k.lit { background: var(--fg); border-color: var(--fg); color: var(--key); }
+.k.lit .lg, .k.lit .mark { color: inherit; }
+.k.seq, .k.hit { box-shadow: inset 0 0 0 2px var(--app); }
+.k.ping { box-shadow: inset 0 0 0 2px var(--fg); }
+.k.dim { opacity: 0.3; }
+.k.trans .lg { opacity: 0.5; }
+.board-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--muted); }
+.board-key i { font-style: normal; font-weight: 700; color: var(--warn); }
+.board-key b { display: inline-block; width: 10px; height: 3px; border-radius: 1px; background: var(--src); vertical-align: middle; margin-right: 5px; }
+.k { isolation: isolate; }
+.k.used::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--fg); opacity: calc(0.03 + var(--heat, 0) * 0.13); }
+.k .pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; }
+.k .pill { font-size: calc(var(--u) * 0.165); line-height: 1.35; padding: 0 calc(var(--u) * 0.05); border-radius: 3px; white-space: nowrap;
+  background: color-mix(in srgb, var(--fg) 14%, transparent); }
+.board-details { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 8px;
+  padding-right: 10px; }
+/* Thin scroll bars in the panel's colours, instead of the system's full-size ones (shown while a mouse is
+   connected). The window is made wider by their width (SCROLLBAR), so they don't cover the last column. */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--key-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--faint); }
+.board-details > h3 { color: var(--fg); margin-bottom: 2px; }
+.board-details .sub { font-size: 11.5px; color: var(--muted); margin: 0 0 8px; }
+.board-details li.note .label { color: var(--muted); }
+.board-details .combos { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 10px; }
 [hidden] { display: none !important; }
 ]]
 
@@ -720,7 +857,7 @@ const main = document.querySelector("main");
 const empty = document.querySelector(".empty");
 const icon = document.querySelector("header img");
 const appName = document.querySelector("h1");
-const hint = document.querySelector(".hint");
+const hints = [...document.querySelectorAll("header .hint")];
 const measure = Object.assign(document.createElement("div"), { className: "measure" });
 document.body.append(measure);
 const areas = [...document.querySelectorAll(".area")].map((element) => ({
@@ -729,11 +866,17 @@ const areas = [...document.querySelectorAll(".area")].map((element) => ({
 // Must match the CSS: column width and gap, the space below a group's header and below a group, and
 // the width taken by the areas' padding, the line between them and the panel's border
 const COLUMN_WIDTH = 272, GAP = 24, HEAD_SPACE = 4, GROUP_SPACE = 12, FRAME = 75;
-// The header's gap, its right padding and the search field's smallest width
-const HEADER_GAP = 10, HEADER_PADDING = 18, INPUT_MIN = 160;
+// The header's gap, its right padding and the search field's smallest width, then the keyboard view's
+// side and bottom padding
+const HEADER_GAP = 10, HEADER_PADDING = 18, INPUT_MIN = 160, BOARD_PADDING = 18, BOARD_BOTTOM = 14;
+// The scroll bars' width, and the space between the keyboard view's list and its scroll bar, from the CSS
+const SCROLLBAR = 8, BOARD_GUTTER = 10;
 // A group split across columns keeps at least this many rows in each part
 const MIN_PART = 3;
 let rows = [], unfolded = false;
+// The app in front. Its menus' groups have no tag in the list, where the app's area is named after it,
+// but searching for its name finds them, and the keyboard view tags them with it.
+let appTitle = "";
 // Set when the overlay opens: how tall a column can get before the window reaches its full height,
 // how many columns fit on the screen, and how many fit in the window
 let maxColumnHeight = Infinity, maxColumns = 2, columnsShown = 2;
@@ -756,7 +899,9 @@ function buildGroup(group) {
   if (group.tag) head.append(node("span", "tag", group.tag));
   const items = group.rows.map((row) => {
     const item = node("li");
-    item.dataset.search = row.search;
+    // What the filter matches: words in the description, group and tag, and each shortcut's keys
+    item.haystack = [row.label, group.title, groupTag(group)].join(" ").toLowerCase();
+    item.combos = row.keys.flat().flatMap((step) => expandRange(step).map(parseKey).filter(Boolean));
     item.appendChild(node("span", "label", row.label)).dataset.text = row.label;
     const keys = item.appendChild(node("span", "keys"));
     row.keys.forEach((alternative, index) => {
@@ -769,13 +914,12 @@ function buildGroup(group) {
   if (group.folded) {
     more = node("li", "more");
     more.append(node("span", "label", "Show all " + items.length), node("span", "keys"));
-    more.lastChild.append(node("kbd", null, "Tab"));
     more.addEventListener("click", toggleFolded);
   }
   return { className: "group src-" + group.source, head, rows: items, more, hidden: false };
 }
 
-// A folded group shows only its "Show all" row, until Tab opens it or a search matches its rows
+// A folded group shows only its "Show all" row, until it's clicked or a search matches its rows
 function shownRows(group) {
   if (group.more && !unfolded && !input.value.trim()) return [group.more];
   return group.rows.filter((row) => !row.hidden);
@@ -841,9 +985,10 @@ function pack(measured, limit) {
   return columns;
 }
 
-// The lowest column height that fits everything into `count` columns, so they end about level
-function flow(measured, count) {
-  let low = heightOf(measured) / count, high = heightOf(measured) + 1000;
+// The lowest column height that fits everything into `count` columns, so they end about level, and
+// no lower than `minHeight`
+function flow(measured, count, minHeight = 0) {
+  let low = Math.max(minHeight, heightOf(measured) / count), high = heightOf(measured) + 1000;
   for (let step = 0; step < 24; step++) {
     const middle = (low + high) / 2;
     if (pack(measured, middle).length <= count) high = middle;
@@ -893,14 +1038,13 @@ function contentSize() {
     const columns = shown.reduce((count, area) => count + area.columns.children.length, 0);
     main.style.setProperty("--extra", (minWidth - width) / columns + "px");
   }
-  return {
-    width: Math.ceil(Math.max(minWidth, width)),
-    height: Math.ceil(Math.max(...shown.map((area) => area.columns.getBoundingClientRect().bottom)) + 20),
-  };
+  const height = Math.ceil(Math.max(...shown.map((area) => area.columns.getBoundingClientRect().bottom)) + 20);
+  // Taller than the screen allows, it scrolls: room for the scroll bar, so it doesn't cover the last column
+  return { width: Math.ceil(Math.max(minWidth, width) + (height > full.height ? SCROLLBAR : 0)), height };
 }
 
 // Lays out again after filtering or folding, and has Hammerspoon fit the window to it. Typing only
-// narrows it from the width it opened at, as fewer columns are needed; Tab can widen it.
+// narrows it from the width it opened at, as fewer columns are needed; unfolding can widen it.
 function refresh(resize) {
   main.scrollTop = 0;
   layout(resize ? maxColumns : columnsShown);
@@ -920,8 +1064,14 @@ function render(data) {
   icon.hidden = !data.icon;
   icon.src = data.icon;
   appName.textContent = areas[0].title.textContent = data.app;
-  minWidth = Math.ceil(appName.getBoundingClientRect().right + 2 * HEADER_GAP + INPUT_MIN + hint.getBoundingClientRect().width + HEADER_PADDING + 1);
+  full = { width: innerWidth, height: innerHeight };
+  viewHint.textContent = view === "board" ? "⇥ list" : "⇥ keyboard";
+  main.hidden = false;
+  boardView.hidden = true;
+  minWidth = Math.ceil(appName.getBoundingClientRect().right + HEADER_GAP + INPUT_MIN + HEADER_PADDING + 1
+    + hints.reduce((sum, hint) => sum + HEADER_GAP + hint.getBoundingClientRect().width, 0));
   const groups = Array.isArray(data.groups) ? data.groups : [];
+  appTitle = data.app;
   for (const area of areas) area.groups = groups.filter((group) => group.area === area.name).map(buildGroup);
   rows = areas.flatMap((area) => area.groups.flatMap((group) => group.rows));
   input.value = "";
@@ -934,7 +1084,8 @@ function render(data) {
   input.focus();
   const size = contentSize();
   columnsShown = columnsIn(size.width);
-  return size;
+  setupBoard(data.keyboard, groups, data.app);
+  return view === "board" ? showBoard() : size;
 }
 
 function highlight(label, query) {
@@ -945,23 +1096,107 @@ function highlight(label, query) {
   label.replaceChildren(text.slice(0, at), mark, text.slice(at + query.length));
 }
 
-// Every word has to match, in any order: "shift cmd p" finds ⇧⌘P
-input.addEventListener("input", () => {
-  const query = input.value.trim().toLowerCase();
-  const words = query.split(/\s+/).filter(Boolean);
+// The filter. Words search the descriptions, group names and tags. Modifier names (cmd, shift, alt, ctrl,
+// hyper, fn, or ⌘⇧⌥⌃) and a key (w, 3, tab, space, f5…) search the shortcuts: with a key, the modifiers
+// have to be exactly those, so "cmd w" finds ⌘W and not ⇧⌘W. A key name like "tab" on its own matches
+// descriptions too.
+const QUERY_MODS = {
+  cmd: "cmd", command: "cmd", "⌘": "cmd", shift: "shift", "⇧": "shift", alt: "alt", opt: "alt", option: "alt", "⌥": "alt",
+  ctrl: "ctrl", control: "ctrl", "⌃": "ctrl", fn: "fn", hyper: "hyper",
+};
+const QUERY_KEYS = {
+  space: "space", tab: "tab", esc: "escape", escape: "escape", return: "return", enter: "return", delete: "delete", backspace: "delete",
+  left: "left", right: "right", up: "up", down: "down", home: "home", end: "end", pageup: "pageup", pagedown: "pagedown",
+};
+
+function parseQuery(text) {
+  const query = { words: [], keyNames: [], mods: new Set(), key: null };
+  for (const token of text.trim().toLowerCase().split(/[\s+]+/).filter(Boolean)) {
+    const symbols = MOD_NAMES[token[0]] && token.length > 1 && parseKey(token.toUpperCase());
+    if (QUERY_MODS[token]) {
+      query.mods.add(QUERY_MODS[token]);
+    } else if ([...token].length === 1) {
+      query.key = SHIFTED[token] || token;
+      if (SHIFTED[token]) query.mods.add("shift");
+    } else if (QUERY_KEYS[token] || /^f\d{1,2}$/.test(token)) {
+      query.keyNames.push(token);
+    } else if (symbols) { // ⌘w, ⇧⌘p
+      symbols.mods.forEach((mod) => query.mods.add(mod));
+      query.key = symbols.key;
+    } else {
+      query.words.push(token);
+    }
+  }
+  query.empty = !query.words.length && !query.keyNames.length && !query.mods.size && !query.key;
+  return query;
+}
+
+const allMods = (mods) => new Set([...mods].flatMap((mod) => (mod === "hyper" ? MODS : [mod])));
+
+// Whether a shortcut matches: `text` is its description, group and tag, `combos` its keys ({ mods, key })
+function matchesQuery(query, text, combos) {
+  if (!query.words.every((word) => text.includes(word))) return false;
+  // With modifiers, a key name is the key ("cmd tab" is ⌘⇥); alone it can be a word too ("tab")
+  const keyNames = query.mods.size ? query.keyNames : query.keyNames.filter((name) => !text.includes(name));
+  if (keyNames.length > 1 || (keyNames.length && query.key)) return false;
+  const key = query.key || (keyNames.length ? QUERY_KEYS[keyNames[0]] || keyNames[0] : null);
+  if (!key && !query.mods.size) return true;
+  const wanted = allMods(query.mods);
+  return combos.some((combo) => {
+    if (key && combo.key !== key) return false;
+    const mods = allMods(combo.mods);
+    if (key && wanted.size) return mods.size === wanted.size && [...wanted].every((mod) => mods.has(mod));
+    return [...wanted].every((mod) => mods.has(mod));
+  });
+}
+
+function filterList() {
+  const text = input.value.trim().toLowerCase();
+  const query = parseQuery(input.value);
   for (const row of rows) {
-    row.hidden = !words.every((word) => row.dataset.search.includes(word));
-    highlight(row.querySelector(".label"), query);
+    row.hidden = !query.empty && !matchesQuery(query, row.haystack, row.combos);
+    highlight(row.querySelector(".label"), text);
   }
   for (const area of areas) for (const group of area.groups) group.hidden = group.rows.every((row) => row.hidden);
+}
+
+// The list is filtered when it's shown again, not while typing in the keyboard view
+input.addEventListener("input", () => {
+  if (view === "board") return paintBoard(true);
+  filterList();
   refresh(false);
 });
 
-// Tab opens or folds the folded groups. Escape clears the filter first, then closes.
+// The keys that scroll a long list without a mouse, which the one-line filter field has no use for:
+// ↑ and ↓ by a few rows, Page Up and Page Down by a page, ⌘↑ and ⌘↓ (or Home and End) to either end
+function scrollByKey(event) {
+  if (event.shiftKey || event.altKey || event.ctrlKey) return false;
+  const pane = view === "board" ? details : main;
+  const ends = { Home: 0, End: pane.scrollHeight };
+  if (event.metaKey) Object.assign(ends, { ArrowUp: 0, ArrowDown: pane.scrollHeight });
+  if (event.key in ends) {
+    pane.scrollTo({ top: ends[event.key], behavior: "smooth" });
+    return true;
+  }
+  const step = event.metaKey ? undefined : { ArrowDown: 60, ArrowUp: -60, PageDown: pane.clientHeight * 0.9, PageUp: -pane.clientHeight * 0.9 }[event.key];
+  if (step === undefined) return false;
+  pane.scrollBy({ top: step, behavior: event.repeat ? "auto" : "smooth" });
+  return true;
+}
+
+// Tab switches between the list and the keyboard. In the keyboard, tmux's prefix (⌃Z) shows what the
+// keys do after it, as tmux waits for the next key; pressing it again goes back. Escape clears the
+// filter first, then closes.
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Tab") {
+  if (scrollByKey(event)) {
     event.preventDefault();
-    toggleFolded();
+  } else if (event.key === "Tab") {
+    event.preventDefault();
+    setView(view === "list" ? "board" : "list");
+  } else if (view === "board" && kb?.prefix && isPrefix(event)) {
+    event.preventDefault();
+    Object.assign(pick, { combo: pick.combo === "prefix" ? null : "prefix", peek: null, layer: 0 });
+    paintBoard(true);
   } else if (event.key === "Escape") {
     event.preventDefault();
     if (input.value) {
@@ -978,31 +1213,675 @@ document.addEventListener("mousedown", (event) => {
   if (event.target !== input) event.preventDefault();
 });
 
+// Keyboard view ------------------------------------------------------------------------------------
+// The keyboard with what each key does under the modifiers held down (or picked on a chip): the
+// Moonlander while it's plugged in, else the built-in keyboard. Typing lights the keys that match.
+
+const boardView = document.querySelector(".board-view");
+const board = boardView.querySelector(".board");
+const modChips = boardView.querySelector(".mods"), layerChips = boardView.querySelector(".layers");
+const freeChip = boardView.querySelector(".free"), boardKey = boardView.querySelector(".board-key");
+const details = boardView.querySelector(".board-details");
+const viewHint = document.querySelector(".view-hint");
+let view = "list", full = { width: innerWidth, height: innerHeight }, kb = null;
+// The combination picked on a chip and the one held down, the layer, and the key or row pointed at
+const pick = { combo: null, peek: null, armed: false, layer: 0, free: false, hover: null, row: null };
+
+const MOD_NAMES = { "⌃": "ctrl", "⌥": "alt", "⇧": "shift", "⌘": "cmd" };
+const MODS = ["ctrl", "alt", "shift", "cmd"];
+const NAMED_KEYS = {
+  Space: "space", "⇥": "tab", "↩": "return", "⌤": "return", "⎋": "escape", "⌫": "delete", "⌦": "forwarddelete",
+  "←": "left", "→": "right", "↑": "up", "↓": "down", "↖": "home", "↘": "end", "⇞": "pageup", "⇟": "pagedown",
+};
+// Menus show some shortcuts by their shifted character (⌘+, ⌘?): those are the unshifted key with ⇧
+const SHIFTED = {
+  "~": "`", "!": "1", "@": "2", "#": "3", $: "4", "%": "5", "^": "6", "&": "7", "*": "8", "(": "9", ")": "0",
+  _: "-", "+": "=", "{": "[", "}": "]", "|": "\\", ":": ";", '"': "'", "<": ",", ">": ".", "?": "/",
+};
+// Chips in a fixed order, so a combination is always in the same place
+const COMBO_ORDER = ["cmd", "shift+cmd", "alt+cmd", "alt+shift+cmd", "ctrl+cmd", "ctrl+shift+cmd", "ctrl+alt+cmd", "alt", "alt+shift",
+  "ctrl", "ctrl+shift", "ctrl+alt", "ctrl+alt+shift", "hyper", "fn", "prefix"];
+// The binding a key shows first: skhd and Hammerspoon get keys before macOS, and macOS before apps
+const RANK = { wm: 0, hs: 0, mac: 1, config: 2, tmux: 2, app: 3 };
+const GLOBAL = new Set(["wm", "hs"]), LOCAL = new Set(["app", "config", "tmux"]);
+const ARROWS = { left: "←", down: "↓", up: "↑", right: "→" };
+
+// "⌥⇧H" -> { mods: alt shift, key: "h" }, or null for mouse actions and keys that aren't on a keyboard
+function parseKey(text) {
+  const mods = new Set();
+  let rest = text;
+  if (rest.startsWith("fn ")) { mods.add("fn"); rest = rest.slice(3); }
+  if (rest.startsWith("Hyper ")) { MODS.forEach((mod) => mods.add(mod)); rest = rest.slice(6); }
+  while (rest.length > 1 && MOD_NAMES[rest[0]]) { mods.add(MOD_NAMES[rest[0]]); rest = rest.slice(1); }
+  let key = NAMED_KEYS[rest] || (/^F\d{1,2}$/.test(rest) ? rest.toLowerCase() : [...rest].length === 1 ? rest.toLowerCase() : null);
+  if (!key) return null;
+  if (SHIFTED[key]) { key = SHIFTED[key]; mods.add("shift"); }
+  return { mods, key };
+}
+
+// A combination's id: its modifiers in macOS's order, with "hyper" for all four
+function comboId(mods) {
+  const hyper = MODS.every((mod) => mods.has(mod));
+  return (mods.has("fn") ? ["fn"] : []).concat(hyper ? ["hyper"] : MODS.filter((mod) => mods.has(mod))).join("+");
+}
+function comboLabel(id) {
+  if (id === "prefix") return "tmux " + kb.prefix.text;
+  return id.split("+").map((mod) => ({ fn: "fn ", ctrl: "⌃", alt: "⌥", shift: "⇧", cmd: "⌘", hyper: "Hyper" })[mod]).join("");
+}
+const comboOrder = (id) => (COMBO_ORDER.includes(id) ? COMBO_ORDER.indexOf(id) : COMBO_ORDER.length);
+
+// Whether a keydown is tmux's prefix. By the key's position, so it works in any input source.
+function isPrefix(event) {
+  const code = event.code || "";
+  const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code.startsWith("Digit") ? code.slice(5) : code === "Space" ? "space" : null;
+  return key === kb.prefix.key
+    && MODS.every((mod) => kb.prefix.mods.has(mod) === event[{ ctrl: "ctrlKey", alt: "altKey", shift: "shiftKey", cmd: "metaKey" }[mod]]);
+}
+
+// "⌥1–9" -> ⌥1 … ⌥9
+function expandRange(text) {
+  const range = text.match(/^(.*?)(\d)–(\d)$/);
+  if (!range) return [text];
+  const keys = [];
+  for (let digit = +range[2]; digit <= +range[3]; digit++) keys.push(range[1] + digit);
+  return keys;
+}
+
+// A binding for each key a row's shortcut is on. Chords (⌘K, then ⌘I) and copy mode's keys aren't drawn.
+const groupTag = (group) => group.tag || (group.source === "app" ? appTitle : "");
+
+function collectBindings(groups) {
+  const bindings = [];
+  for (const [groupIndex, group] of groups.entries()) {
+    if (group.source === "tmux" && group.title === "Copy mode") continue;
+    const after = group.source === "tmux" && group.title.match(/^After (\S+)/);
+    if (after && !kb.prefix) kb.prefix = { text: after[1], ...parseKey(after[1]) };
+    for (const row of group.rows) {
+      for (const alternative of row.keys) {
+        if (alternative.length !== 1) continue;
+        for (const text of expandRange(alternative[0])) {
+          const parsed = parseKey(text);
+          const combo = parsed && (after ? "prefix" : comboId(parsed.mods));
+          if (!combo) continue;
+          bindings.push({ id: bindings.length, combo, key: parsed.key, mods: parsed.mods, text, shown: alternative[0], label: row.label,
+            source: group.source, haystack: [row.label, group.title, groupTag(group)].join(" ").toLowerCase(),
+            shifted: !!after && parsed.mods.has("shift"), groupIndex, groupTitle: group.title, tag: groupTag(group), folded: !!group.folded });
+        }
+      }
+    }
+  }
+  return bindings;
+}
+
+// What a key shows for a binding: an arrow and a verb for directions, else the label (a menu item's own name)
+function capText(binding) {
+  const label = binding.label.split(" › ").at(-1);
+  const direction = label.match(/^(Focus|Move|Insert|Grow|Shrink|Resize pane) (left|down|up|right)$/i);
+  const text = direction
+    ? { big: ARROWS[direction[2].toLowerCase()], small: direction[1].replace(/^Resize pane$/i, "resize").toLowerCase() }
+    : { small: label };
+  if (binding.shifted) text.small = "⇧ " + text.small;
+  return text;
+}
+
+// Moonlander keycodes (QMK's names, as in Oryx's keymap.c): [legend, the key's name in a shortcut, modifier]
+const QMK = {
+  KC_GRAVE: ["`", "`"], KC_GRV: ["`", "`"], KC_MINUS: ["-", "-"], KC_MINS: ["-", "-"], KC_EQUAL: ["=", "="], KC_EQL: ["=", "="],
+  KC_LBRC: ["[", "["], KC_RBRC: ["]", "]"], KC_BSLS: ["\\", "\\"], KC_SCLN: [";", ";"], KC_QUOTE: ["'", "'"], KC_QUOT: ["'", "'"],
+  KC_COMMA: [",", ","], KC_COMM: [",", ","], KC_DOT: [".", "."], KC_SLASH: ["/", "/"], KC_SLSH: ["/", "/"],
+  KC_TAB: ["⇥", "tab"], KC_SPACE: ["Space", "space"], KC_SPC: ["Space", "space"], KC_ENTER: ["↩", "return"], KC_ENT: ["↩", "return"],
+  KC_ESCAPE: ["Esc", "escape"], KC_ESC: ["Esc", "escape"], KC_BSPC: ["⌫", "delete"], KC_DELETE: ["⌦", "forwarddelete"], KC_DEL: ["⌦", "forwarddelete"],
+  KC_LEFT: ["←", "left"], KC_RIGHT: ["→", "right"], KC_RGHT: ["→", "right"], KC_UP: ["↑", "up"], KC_DOWN: ["↓", "down"],
+  KC_HOME: ["Home", "home"], KC_END: ["End", "end"], KC_PAGE_UP: ["PgUp", "pageup"], KC_PGUP: ["PgUp", "pageup"],
+  KC_PAGE_DOWN: ["PgDn", "pagedown"], KC_PGDN: ["PgDn", "pagedown"], KC_CAPS: ["Caps"],
+  KC_LEFT_SHIFT: ["⇧", null, "shift"], KC_LSFT: ["⇧", null, "shift"], KC_RIGHT_SHIFT: ["⇧", null, "shift"], KC_RSFT: ["⇧", null, "shift"],
+  KC_LEFT_CTRL: ["⌃", null, "ctrl"], KC_LCTL: ["⌃", null, "ctrl"], KC_RIGHT_CTRL: ["⌃", null, "ctrl"], KC_RCTL: ["⌃", null, "ctrl"],
+  KC_LEFT_ALT: ["⌥", null, "alt"], KC_LALT: ["⌥", null, "alt"], KC_RIGHT_ALT: ["⌥", null, "alt"], KC_RALT: ["⌥", null, "alt"],
+  KC_LEFT_GUI: ["⌘", null, "cmd"], KC_LGUI: ["⌘", null, "cmd"], KC_RIGHT_GUI: ["⌘", null, "cmd"], KC_RGUI: ["⌘", null, "cmd"],
+  KC_HYPR: ["Hyper", null, "hyper"], KC_MEH: ["Meh"],
+  KC_MEDIA_PLAY_PAUSE: ["⏯"], KC_MEDIA_PREV_TRACK: ["⏮"], KC_MEDIA_NEXT_TRACK: ["⏭"], KC_AUDIO_MUTE: ["Mute"],
+  KC_AUDIO_VOL_UP: ["Vol +"], KC_AUDIO_VOL_DOWN: ["Vol −"], KC_MS_BTN1: ["Click"], KC_MS_BTN2: ["Right click"], KC_MS_BTN3: ["Middle click"],
+  KC_MS_UP: ["Mouse ↑"], KC_MS_DOWN: ["Mouse ↓"], KC_MS_LEFT: ["Mouse ←"], KC_MS_RIGHT: ["Mouse →"], KC_MS_WH_UP: ["Wheel ↑"],
+  KC_MS_WH_DOWN: ["Wheel ↓"], QK_BOOT: ["Reset"], KC_KP_PLUS: ["+"], KC_KP_MINUS: ["−"], KC_KP_ENTER: ["↩"], KC_PSCR: ["Print"],
+  KC_LPRN: ["("], KC_RPRN: [")"], KC_PIPE: ["|"], KC_LCBR: ["{"], KC_RCBR: ["}"], KC_COLN: [":"], KC_CIRC: ["^"], KC_LABK: ["<"],
+  KC_RABK: [">"], KC_ASTR: ["*"], KC_AMPR: ["&"], KC_HASH: ["#"], RGB_TOG: ["Light"], RGB_MODE_FORWARD: ["Effect"],
+  RGB_VAI: ["Bright +"], RGB_VAD: ["Bright −"], RGB_SPI: ["Speed +"], RGB_SPD: ["Speed −"], RGB_HUI: ["Hue +"], RGB_HUD: ["Hue −"],
+  RGB_SAI: ["Sat +"], RGB_SAD: ["Sat −"], TOGGLE_LAYER_COLOR: ["Layer colours"],
+};
+const WRAPPERS = { LCTL: "⌃", RCTL: "⌃", C: "⌃", LSFT: "⇧", RSFT: "⇧", S: "⇧", LALT: "⌥", RALT: "⌥", A: "⌥", LGUI: "⌘", RGUI: "⌘", G: "⌘" };
+
+// A Moonlander keycode -> { legend, char (the key's name in a shortcut), mod, hold (the layer it holds) }
+function qmkKey(code) {
+  let match;
+  if ((match = code.match(/^(\w+)\((.*)\)$/)) && WRAPPERS[match[1]]) return { legend: WRAPPERS[match[1]] + qmkKey(match[2]).legend };
+  if ((match = code.match(/^(?:MO|TG|TT|OSL|TO|DF)\((\d+)\)$/))) return { legend: "", hold: +match[1] };
+  if ((match = code.match(/^LT\((\d+),(\w+)\)$/))) return { ...qmkKey(match[2]), hold: +match[1] };
+  if (code === "KC_TRANSPARENT" || code === "KC_TRNS" || code === "_______") return { legend: "", trans: true };
+  if (code === "KC_NO" || code === "XXXXXXX") return { legend: "", blank: true };
+  if (QMK[code]) return { legend: QMK[code][0], char: QMK[code][1] || null, mod: QMK[code][2] || null };
+  if ((match = code.match(/^KC_([A-Z])$/))) return { legend: match[1], char: match[1].toLowerCase() };
+  if ((match = code.match(/^KC_(\d)$/))) return { legend: match[1], char: match[1] };
+  if ((match = code.match(/^KC_F(\d{1,2})$/))) return { legend: "F" + match[1], char: "f" + match[1] };
+  return { legend: code.replace(/^[A-Z]+_/, "").replace(/_/g, " ").toLowerCase() };
+}
+
+// The built-in keyboard by key code, ANSI or ISO, labelled with what the layout types; US keys until the reader says
+const US_KEYS = [..."asdfhgzxcv§bqweryt123465=97-80]ou[ip", "", ..."lj'k;\\,/nm.", "", "", "`"];
+const SPECIAL = {
+  36: ["↩", "return"], 48: ["⇥", "tab"], 49: ["", "space"], 51: ["⌫", "delete"], 53: ["esc", "escape"], 57: ["⇪"],
+  56: ["⇧", null, "shift"], 60: ["⇧", null, "shift"], 59: ["⌃", null, "ctrl"], 58: ["⌥", null, "alt"], 61: ["⌥", null, "alt"],
+  55: ["⌘", null, "cmd"], 54: ["⌘", null, "cmd"], 63: ["fn", null, "fn"], 123: ["←", "left"], 124: ["→", "right"], 125: ["↓", "down"], 126: ["↑", "up"],
+};
+const F_KEYS = [122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111];
+function builtinKeys(typed) {
+  const iso = typed.shape === "ISO", keys = [];
+  const add = (code, x, y, w, h) => {
+    const special = SPECIAL[code];
+    const char = special ? special[1] || null : F_KEYS.includes(code) ? "f" + (F_KEYS.indexOf(code) + 1) : typed.keys?.[code]?.base ?? US_KEYS[code] ?? null;
+    const legend = special ? special[0] : F_KEYS.includes(code) ? "F" + (F_KEYS.indexOf(code) + 1) : (char || "").toUpperCase();
+    keys.push({ x, y, w, h, base: { legend, char, mod: special?.[2] || null } });
+  };
+  let x = 0;
+  for (const code of [53, ...F_KEYS]) { add(code, x, 0, code === 53 ? 1.5 : 1, 0.7); x += code === 53 ? 1.5 : 1; }
+  const row = (y, items) => {
+    let left = 0;
+    for (const [code, w = 1] of items) { add(code, left, y, w, 1); left += w; }
+  };
+  const letters = (codes) => codes.map((code) => [code]);
+  row(0.85, [[iso ? 10 : 50], ...letters([18, 19, 20, 21, 23, 22, 26, 28, 25, 29, 27, 24]), [51, 1.5]]);
+  row(1.85, [[48, 1.5], ...letters([12, 13, 14, 15, 17, 16, 32, 34, 31, 35, 33, 30]), iso ? [36, 1] : [42, 1]]);
+  row(2.85, [[57, 1.75], ...letters([0, 1, 2, 3, 5, 4, 38, 40, 37, 41, 39]), ...(iso ? [[42, 1], [36, 0.75]] : [[36, 1.75]])]);
+  row(3.85, [...(iso ? [[56, 1.25], [50, 1]] : [[56, 2.25]]), ...letters([6, 7, 8, 9, 11, 45, 46, 43, 47, 44]), [60, 2.25]]);
+  row(4.85, [[63], [59], [58], [55, 1.25], [49, 5], [54, 1.25], [61], [123]]);
+  add(126, 12.5, 4.85, 1, 0.5);
+  add(125, 12.5, 5.35, 1, 0.5);
+  add(124, 13.5, 4.85, 1, 1);
+  if (iso) keys.find((key) => key.base.char === "return" && key.w === 0.75).base.legend = "";
+  return keys;
+}
+
+const SOURCE_NAMES = { config: "your bindings", tmux: "tmux", wm: "yabai", hs: "Hammerspoon", mac: "macOS" };
+
+function setupBoard(keyboard, groups, appTitle) {
+  keyboard = keyboard || {};
+  const typed = keyboard.typed || {};
+  kb = { prefix: null, option: {}, names: [] };
+  for (const entry of Object.values(typed.keys || {})) kb.option[entry.base] = entry;
+  const moon = keyboard.board === "moonlander" && keyboard.moonlander;
+  if (moon) {
+    kb.moon = true;
+    kb.names = moon.names || [];
+    kb.keys = moon.keys.map((geometry, index) => {
+      const layers = moon.layers.map((codes) => qmkKey(codes[index] || "KC_NO"));
+      for (const entry of layers) if (entry.hold !== undefined && !entry.legend) entry.legend = kb.names[entry.hold] || "Layer " + entry.hold;
+      return { ...geometry, layers, base: layers[0] };
+    });
+  } else {
+    kb.moon = false;
+    kb.keys = builtinKeys(typed);
+  }
+  kb.cols = Math.max(...kb.keys.map((key) => key.x + key.w));
+  kb.rows = Math.max(...kb.keys.map((key) => key.y + key.h));
+  kb.bindings = collectBindings(groups);
+  kb.byCombo = {};
+  kb.byKey = {};
+  kb.used = {}; // without tmux's built-ins, as in the list, or ⌃Z would be on almost every key
+  for (const binding of kb.bindings) {
+    ((kb.byCombo[binding.combo] ||= {})[binding.key] ||= []).push(binding);
+    (kb.byKey[binding.key] ||= []).push(binding);
+    if (!binding.folded) (kb.used[binding.key] ||= []).push(binding);
+  }
+  kb.busiest = Math.max(1, ...Object.values(kb.used).map((list) => list.length));
+  for (const byKey of Object.values(kb.byCombo)) {
+    for (const list of Object.values(byKey)) list.sort((a, b) => RANK[a.source] - RANK[b.source] || a.shifted - b.shifted);
+  }
+  const counts = {};
+  for (const binding of uniqueRows(kb.bindings)) counts[binding.combo] = (counts[binding.combo] || 0) + 1;
+  kb.combos = Object.keys(counts).sort((a, b) => comboOrder(a) - comboOrder(b) || counts[b] - counts[a]).map((id) => ({ id, count: counts[id] }));
+
+  // It opens with no combination picked: each key lists the combinations that do something on it
+  Object.assign(pick, { combo: null, peek: null, armed: false, layer: 0, hover: null, row: null });
+
+  modChips.replaceChildren(...kb.combos.map(({ id, count }) => {
+    const chip = node("span", "chip", comboLabel(id));
+    chip.append(node("span", "n", String(count)));
+    chip.dataset.combo = id;
+    // Clicking the picked chip again goes back to no combination
+    chip.addEventListener("click", () => {
+      Object.assign(pick, { combo: pick.combo === id && !pick.layer ? null : id, layer: 0 });
+      paintBoard(true);
+    });
+    return chip;
+  }));
+  layerChips.hidden = !kb.moon;
+  layerChips.replaceChildren(...(kb.moon ? kb.keys[0].layers : []).map((_, layer) => {
+    const chip = node("span", "chip", kb.names[layer] || "Layer " + layer);
+    chip.dataset.layer = layer;
+    chip.addEventListener("click", () => { pick.layer = layer; paintBoard(true); });
+    return chip;
+  }));
+  board.replaceChildren(...kb.keys.map((key, index) => {
+    key.element = node("div", "k");
+    key.element.append(node("span", "lg"), node("span", "act"));
+    key.element.addEventListener("mouseenter", () => { pick.hover = index; paintDetails(); fitSoon(); });
+    key.element.addEventListener("mouseleave", () => { pick.hover = null; paintDetails(); fitSoon(); });
+    return key.element;
+  }));
+  const sources = [...new Set(kb.bindings.map((binding) => binding.source))].sort((a, b) => RANK[a] - RANK[b]);
+  boardKey.replaceChildren(
+    ...sources.map((source) => { const item = node("span", "s-" + source); item.append(node("b"), source === "app" ? appTitle : SOURCE_NAMES[source]); return item; }),
+    // The marks' entries show only while a key has that mark (see paintKeys)
+    ...[["!", "skhd or Hammerspoon takes it from the app"], ["×", "two global shortcuts on one key"], ["•", "an accent key (⌥E for é) a shortcut has taken"]]
+      .map(([mark, text]) => { const item = node("span"); item.dataset.mark = mark; item.append(node("i", null, mark), " " + text); return item; }),
+  );
+}
+
+// The key unit, from the widest the window can get
+function layoutBoard() {
+  const u = Math.max(40, Math.min(58, Math.floor((full.width - 2 * BOARD_PADDING - 2) / kb.cols)));
+  kb.width = kb.cols * u;
+  board.style.setProperty("--u", u + "px");
+  board.style.width = kb.width + "px";
+  board.style.height = kb.rows * u + "px";
+  const gap = Math.max(3, Math.round(u * 0.07));
+  for (const key of kb.keys) {
+    Object.assign(key.element.style, {
+      left: key.x * u + gap / 2 + "px", top: key.y * u + gap / 2 + "px", width: key.w * u - gap + "px", height: key.h * u - gap + "px",
+    });
+  }
+}
+
+const currentCombo = () => pick.peek || pick.combo;
+const matching = (query) => kb.bindings.filter((binding) => matchesQuery(query, binding.haystack, [binding]));
+
+// The keys to light for a combination: the Moonlander's Hyper key stands for all four
+function litMods(combo) {
+  if (combo === "prefix") return new Set(kb.prefix.mods);
+  const mods = combo ? combo.split("+") : [];
+  if (mods.includes("hyper")) {
+    const hyperKey = kb.keys.some((key) => key.base.mod === "hyper");
+    mods.splice(mods.indexOf("hyper"), 1, ...(hyperKey ? ["hyper"] : MODS));
+  }
+  return new Set(mods);
+}
+
+function optionChar(combo, char) {
+  const entry = kb.option[char];
+  return (entry && (combo === "alt" ? entry.alt : combo === "alt+shift" ? entry.altShift : "")) || null;
+}
+
+const marksShown = new Set();
+function mark(element, text, title) {
+  const span = node("span", "mark", text);
+  span.title = title;
+  element.append(span);
+  marksShown.add(text);
+}
+
+function paintKeys() {
+  const combo = currentCombo(), query = parseQuery(input.value);
+  const hits = query.empty ? null : matching(query);
+  marksShown.clear();
+  const layer = kb.moon && !hits ? pick.layer : 0;
+  const lit = hits || layer ? new Set() : litMods(combo);
+  for (const chip of modChips.children) {
+    chip.classList.toggle("on", !hits && !layer && !pick.peek && chip.dataset.combo === pick.combo);
+    chip.classList.toggle("peek", chip.dataset.combo === pick.peek);
+  }
+  for (const chip of layerChips.children) chip.classList.toggle("on", !hits && +chip.dataset.layer === layer);
+  freeChip.classList.toggle("on", pick.free);
+
+  kb.keys.forEach((key) => {
+    const { element, base } = key, char = base.char;
+    element.className = "k";
+    element.querySelector(".mark")?.remove();
+    const legend = element.querySelector(".lg");
+    legend.textContent = base.legend;
+    let parts = [];
+    if (base.mod && lit.has(base.mod)) element.classList.add("lit");
+    if (!hits && !layer && combo === "prefix" && char === kb.prefix.key) element.classList.add("seq");
+
+    if (layer) {
+      const entry = key.layers[layer];
+      if (base.hold === layer) {
+        element.classList.add("lit");
+        parts = [["small", "hold"]];
+      } else if (entry.trans) {
+        element.classList.add("trans");
+      } else if (entry.blank) {
+        element.classList.add("dim");
+        legend.textContent = "";
+      } else {
+        legend.textContent = "";
+        parts = [[[...entry.legend].length <= 2 ? "big" : "small", entry.legend]];
+      }
+    } else if (hits) {
+      const mine = char ? hits.filter((binding) => binding.key === char) : [];
+      if (mine.length) {
+        // The first match's label, and the matching combinations as pills, as on the keys with nothing typed
+        element.classList.add("hit", "bound", "s-" + mine[0].source);
+        const text = capText(mine[0]);
+        const combos = [...new Set(mine.map((binding) => (binding.combo === "prefix" ? kb.prefix.text : comboLabel(binding.combo))))];
+        const pills = combos.slice(0, 2);
+        if (combos.length > 2) pills.push("+" + (combos.length - 2));
+        parts = [["big", text.big], ["small", text.small], ["pills", pills]];
+      } else {
+        element.classList.add("dim");
+      }
+    } else if (!combo) {
+      const used = (char && kb.used[char]) || [];
+      if (used.length) {
+        // Shaded by how many shortcuts the key has, with the first three combinations as pills
+        element.classList.add("used");
+        element.style.setProperty("--heat", (used.length / kb.busiest).toFixed(2));
+        const combos = [...new Set(used.map((binding) => binding.combo))].sort((a, b) => comboOrder(a) - comboOrder(b));
+        const pills = combos.slice(0, 3).map((id) => (id === "prefix" ? kb.prefix.text : comboLabel(id)));
+        if (combos.length > 3) pills.push("+" + (combos.length - 3));
+        parts = [["pills", pills]];
+      } else if (pick.free && char) {
+        element.classList.add("free");
+        parts = [["small", "free"]];
+      }
+    } else {
+      const list = (char && kb.byCombo[combo]?.[char]) || [];
+      const option = char && optionChar(combo, char);
+      if (list.length) {
+        const text = capText(list[0]);
+        element.classList.add("bound", "s-" + list[0].source);
+        parts = [["big", text.big], ["small", text.small]];
+        if (list[1]) {
+          const second = capText(list[1]);
+          parts.push(["small second", (second.big ? second.big + " " : "") + second.small]);
+        }
+        const global = list.filter((binding) => GLOBAL.has(binding.source)), local = list.filter((binding) => LOCAL.has(binding.source));
+        const system = list.filter((binding) => binding.source === "mac");
+        if (global.length && local.length) mark(element, "!", "Taken from " + local.map((binding) => binding.label).join(", "));
+        else if (global.length + system.length > 1) mark(element, "×", list.map((binding) => binding.label).join(" and "));
+        else if (option === "dead") mark(element, "•", "Typing accents with this key stops working");
+      } else if (option === "dead") {
+        element.classList.add("dead");
+        parts = [["small", "accent key"]];
+      } else if (option) {
+        element.classList.add("faint");
+        parts = [["big", option]];
+      }
+      if (pick.free && char && !list.length) {
+        element.classList.add("free");
+        if (!parts.length) parts = [["small", "free"]];
+      }
+    }
+    const act = element.querySelector(".act");
+    act.replaceChildren(...parts.filter(([, text]) => text && text.length).map(([className, text]) => {
+      if (className !== "pills") return node("span", className, text);
+      const pills = node("span", "pills");
+      pills.append(...text.map((pill) => node("span", "pill", pill)));
+      return pills;
+    }));
+  });
+  for (const item of boardKey.querySelectorAll("[data-mark]")) item.hidden = !marksShown.has(item.dataset.mark);
+  paintRow();
+}
+
+// Pointing at a row in the list lights its key and modifiers. Only when the mouse really moves: as you
+// type, the list changes under a resting mouse, and WebKit reports the row now under it as entered.
+let mouseMoved = false, lastMouse = null;
+document.addEventListener("mousemove", (event) => {
+  mouseMoved = !lastMouse || lastMouse.x !== event.screenX || lastMouse.y !== event.screenY;
+  lastMouse = { x: event.screenX, y: event.screenY };
+}, true);
+
+function paintRow() {
+  const binding = pick.row === null ? null : kb.bindings[pick.row];
+  if (!binding) return;
+  const mods = litMods(binding.combo);
+  for (const key of kb.keys) {
+    key.element.classList.toggle("ping", key.base.char === binding.key);
+    key.element.classList.toggle("lit", !!key.base.mod && mods.has(key.base.mod));
+    key.element.classList.toggle("seq", binding.combo === "prefix" && key.base.char === kb.prefix.key);
+  }
+}
+
+function detailRow(binding, text) {
+  const item = node("li");
+  item.append(node("span", "label", binding.label));
+  const keys = item.appendChild(node("span", "keys"));
+  if (binding.combo === "prefix") keys.append(node("kbd", null, kb.prefix.text), " ");
+  keys.append(node("kbd", null, text || binding.shown));
+  item.addEventListener("mousemove", () => {
+    if (!mouseMoved || pick.row === binding.id) return;
+    pick.row = binding.id;
+    paintRow();
+  });
+  item.addEventListener("mouseleave", () => {
+    if (pick.row === null) return;
+    pick.row = null;
+    paintKeys();
+  });
+  return item;
+}
+function noteRow(text, warn) {
+  const item = node("li", "note");
+  item.append(node("span", "label", text), node("span", "keys"));
+  if (warn) item.firstChild.style.color = "var(--warn)";
+  return item;
+}
+// One row per shortcut, not per key: ⌥1–9 stays one row
+function uniqueRows(bindings) {
+  const seen = new Set();
+  return bindings.filter((binding) => {
+    const id = binding.source + binding.combo + binding.label + binding.shown;
+    return !seen.has(id) && seen.add(id);
+  });
+}
+
+// Shortcuts under the same headings as in the list, in the list's order, as groups the list's
+// layout (measureGroups, flow, part) can lay out
+function groupedRows(bindings, perKey) {
+  const groups = new Map();
+  for (const binding of uniqueRows([...bindings].sort((a, b) => a.id - b.id))) {
+    if (!groups.has(binding.groupIndex)) groups.set(binding.groupIndex, []);
+    groups.get(binding.groupIndex).push(binding);
+  }
+  return [...groups.keys()].sort((a, b) => a - b).map((index) => {
+    const bindingsHere = groups.get(index), first = bindingsHere[0];
+    const head = node("div", "head");
+    head.append(node("h3", null, first.groupTitle));
+    if (first.tag) head.append(node("span", "tag", first.tag));
+    return { className: "group src-" + first.source, head, rows: bindingsHere.map((binding) => detailRow(binding, perKey && binding.text)), more: null };
+  });
+}
+
+function noteGroup(title, notes) {
+  const head = node("div", "head");
+  head.append(node("h3", null, title));
+  return { className: "group", head, rows: notes, more: null };
+}
+
+// A row with a name and a value in a key chip, like "Code  [" for what a key is on another layer
+function pairRow(name, value) {
+  const item = node("li", "note");
+  item.append(node("span", "label", name));
+  item.appendChild(node("span", "keys")).append(node("kbd", null, value));
+  return item;
+}
+
+// Lays the groups out in columns like the list's, as many as fit under the keyboard and widened to fill
+// its width. A longer list scrolls rather than making the window wider.
+function layOutDetails(groups) {
+  const columns = node("div", "columns");
+  details.append(columns);
+  const perColumn = COLUMN_WIDTH + GAP, inside = 2 * BOARD_PADDING + 2;
+  const room = Math.max(minWidth, kb.width + inside) - inside;
+  const count = Math.max(1, Math.floor((room + GAP) / perColumn));
+  columns.style.setProperty("--extra", Math.max(0, (room - (count * perColumn - GAP)) / count) + "px");
+  if (!groups.length) return;
+  const measured = measureGroups(groups);
+  // Groups too short to split well (see pack) stay whole, even if that leaves a column empty
+  const whole = Math.max(0, ...measured.filter(({ rows: groupRows }) => groupRows.length < 2 * MIN_PART)
+    .map(({ head, rows: groupRows }) => head + groupRows.reduce((sum, row) => sum + row.height, 0)));
+  columns.replaceChildren(...flow(measured, count, whole).map((parts) => {
+    const column = node("div", "column");
+    column.append(...parts.map(({ group, rows: items, continued }) => part(group, items.map(({ row }) => row), continued)));
+    return column;
+  }));
+  measure.replaceChildren();
+}
+
+function paintDetails() {
+  // The rows are rebuilt, so the one pointed at is gone, along with the mouse leaving it
+  if (pick.row !== null) {
+    pick.row = null;
+    paintKeys();
+  }
+  const combo = currentCombo(), query = parseQuery(input.value), index = pick.hover;
+  const parts = [], groups = [];
+  const heading = (title, sub) => {
+    if (title) parts.push(node("h3", null, title));
+    if (sub) parts.push(node("p", "sub", sub));
+  };
+  if (!query.empty) {
+    const hits = matching(query);
+    const count = uniqueRows(hits).length;
+    heading(count + (count === 1 ? " shortcut on the keyboard" : " shortcuts on the keyboard"));
+    groups.push(...groupedRows(hits));
+  } else if (index !== null && kb.keys[index]) {
+    const key = kb.keys[index], char = key.base.char;
+    const bindings = (char && kb.byKey[char]) || [];
+    heading("Key " + (key.base.legend || ""));
+    // Every combination on the key, as on its cap, then its shortcuts grouped as in the list
+    const combos = [...new Set(bindings.map((binding) => binding.combo))].sort((a, b) => comboOrder(a) - comboOrder(b));
+    if (combos.length) {
+      const line = node("p", "combos");
+      line.append(...combos.map((id) => node("kbd", null, comboLabel(id))));
+      parts.push(line);
+    }
+    groups.push(...groupedRows(bindings, true));
+    // What Option types on the key: characters, not shortcuts
+    const typing = [];
+    for (const id of char ? ["alt", "alt+shift"] : []) {
+      const option = optionChar(id, char);
+      const taken = !!kb.byCombo[id]?.[char];
+      if (option) typing.push(noteRow(comboLabel(id) + key.base.legend + (option === "dead" ? " is an accent key (é, ü, î…)" : " types " + option), option === "dead" && taken));
+    }
+    if (typing.length) groups.push(noteGroup("Typing", typing));
+    if (kb.moon) {
+      groups.push(noteGroup("On the other layers", key.layers.slice(1).map((entry, offset) =>
+        pairRow(kb.names[offset + 1] || "Layer " + (offset + 1), entry.trans ? "same" : entry.blank ? "none" : entry.legend))));
+    }
+    if (!bindings.length && !typing.length && !kb.moon) groups.push(noteGroup("Nothing on this key", []));
+  } else if (kb.moon && pick.layer) {
+    heading((kb.names[pick.layer] || "Layer " + pick.layer) + " layer",
+      "Held with the lit key. Faded keys do what they do on " + (kb.names[0] || "the first layer") + ".");
+  } else if (combo) {
+    const all = Object.values(kb.byCombo[combo] || {}).flat();
+    const count = uniqueRows(all).length;
+    heading(comboLabel(combo) + " · " + count + (count === 1 ? " shortcut" : " shortcuts"),
+      combo === "prefix" ? "Press " + kb.prefix.text + ", let go, then the key."
+        : combo.includes("hyper") ? (kb.keys.some((key) => key.base.mod === "hyper") ? "Hyper is the lit key." : "Hyper is ⌃⌥⇧⌘ held together.")
+        : "");
+    groups.push(...groupedRows(all));
+  } else {
+    heading("", "Hold modifiers down, or pick a combination above, to see what the keys do with it.");
+    groups.push(...groupedRows(kb.bindings.filter((binding) => !binding.folded)));
+  }
+  details.replaceChildren(...parts);
+  details.scrollTop = 0;
+  layOutDetails(groups);
+}
+
+// Pointing at keys fits the window to what's listed once the pointer settles, so passing over keys on
+// the way to another doesn't make the bottom edge jump
+let fitTimer = null;
+function fitSoon() {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => {
+    if (view !== "board") return;
+    const size = boardSize();
+    window.webkit?.messageHandlers?.shortcuts?.postMessage(size);
+  }, 120);
+}
+
+// Repaints, and with `resize` has Hammerspoon fit the window to what's now listed
+function paintBoard(resize) {
+  if (!kb) return;
+  paintKeys();
+  paintDetails();
+  if (resize && view === "board") {
+    const size = boardSize();
+    window.webkit?.messageHandlers?.shortcuts?.postMessage(size);
+  }
+}
+
+// The window's size for the keyboard view: as wide as the keyboard, with room for the scroll bar and a gap
+// before it, and as tall as everything in it, up to the most the screen allows (the list scrolls past that).
+// The top edge stays put.
+function boardSize() {
+  const inside = 2 * BOARD_PADDING + 2;
+  const width = Math.ceil(Math.min(full.width, Math.max(minWidth, kb.width + inside) + SCROLLBAR + BOARD_GUTTER));
+  boardView.style.width = width - 2 + "px";
+  const height = Math.ceil(details.lastElementChild.getBoundingClientRect().bottom + BOARD_BOTTOM + 1);
+  boardView.style.width = "";
+  return { width, height, anchor: "top" };
+}
+
+function showBoard() {
+  main.hidden = true;
+  boardView.hidden = false;
+  layoutBoard();
+  paintBoard();
+  return boardSize();
+}
+
+function setView(next) {
+  view = next;
+  viewHint.textContent = view === "board" ? "⇥ list" : "⇥ keyboard";
+  if (view === "board") {
+    const size = showBoard();
+    return window.webkit?.messageHandlers?.shortcuts?.postMessage(size);
+  }
+  boardView.hidden = true;
+  main.hidden = false;
+  filterList();
+  refresh(true);
+}
+
+freeChip.addEventListener("click", () => { pick.free = !pick.free; paintBoard(); });
+
+// Holding modifiers down shows that combination. Modifiers still held from the shortcut that opened
+// the overlay count only once one is pressed again.
+function onModifier(event) {
+  if (view !== "board" || !kb || !["Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
+  if (event.type === "keydown") pick.armed = true;
+  if (!pick.armed) return;
+  const mods = new Set(MODS.filter((mod) => event[{ ctrl: "ctrlKey", alt: "altKey", shift: "shiftKey", cmd: "metaKey" }[mod]]));
+  const held = mods.size ? comboId(mods) : null;
+  const peek = held && kb.combos.some(({ id }) => id === held) ? held : null;
+  if (peek !== pick.peek) {
+    pick.peek = peek;
+    if (peek) pick.layer = 0;
+    paintBoard(true);
+  }
+}
+addEventListener("keydown", onModifier);
+addEventListener("keyup", onModifier);
+
 window.webkit?.messageHandlers?.shortcuts?.postMessage("ready");
 ]==]
 
 local PAGE = table.concat({
     '<!doctype html><html><head><meta charset="utf-8"><style>', CSS, '</style></head><body><div class="panel"><header>',
-    '<img alt="" hidden><h1></h1><input placeholder="Filter: a word, keys (shift cmd p), or yabai, tmux, macOS…" spellcheck="false">',
-    '<span class="hint">esc</span></header><main>',
+    -- No spelling, autocorrection or inline predictions: they run on every keystroke, and Tab accepts a prediction
+    '<img alt="" hidden><h1></h1><input placeholder="Filter: a word, keys (shift cmd p), or yabai, tmux, macOS…" spellcheck="false"',
+    ' autocomplete="off" autocorrect="off" autocapitalize="off" writingsuggestions="false">',
+    '<span class="hint view-hint">⇥ keyboard</span><span class="hint">esc</span></header><main>',
     '<section class="area app" data-area="app"><h2></h2><div class="columns"></div></section>',
     '<section class="area everywhere" data-area="everywhere"><h2>Everywhere</h2><div class="columns"></div></section>',
-    '<p class="empty" hidden>No shortcuts match</p></main></div><script>', SCRIPT, "</script></body></html>",
+    '<p class="empty" hidden>No shortcuts match</p></main>',
+    '<div class="board-view" hidden><div class="board-bar"><div class="chips mods"></div><div class="chips layers"></div>',
+    '<span class="chip free">Free keys</span></div><div class="board"></div><div class="board-key"></div>',
+    '<div class="board-details"></div></div>',
+    '</div><script>', SCRIPT, "</script></body></html>",
 })
-
--- Lets a search for "cmd shift p" find "⇧⌘P"
-local SYMBOL_WORDS = {
-    ["⌘"] = "cmd command", ["⌥"] = "alt option", ["⌃"] = "ctrl control", ["⇧"] = "shift", ["⇥"] = "tab",
-    ["⎋"] = "esc escape", ["↩"] = "return enter", ["⌫"] = "delete backspace", ["⌦"] = "delete",
-    ["←"] = "left", ["→"] = "right", ["↑"] = "up", ["↓"] = "down",
-}
-local function searchText(row, group)
-    local chips = {}
-    for _, alternative in ipairs(row.keys) do table.insert(chips, table.concat(alternative, " ")) end
-    local keys = table.concat(chips, " ")
-    for symbol, words in pairs(SYMBOL_WORDS) do keys = keys:gsub(symbol, " " .. words .. " ") end
-    return table.concat({ row.label, group.title, group.tag or "", keys }, " "):lower()
-end
 
 -- App icons at header size, as data URLs (encoding the full-size icon took most of the opening time)
 local icons = {}
@@ -1015,15 +1894,14 @@ local function iconURL(bundleID)
     return icons[bundleID] or nil
 end
 
--- What render() gets: the app's name and icon, and the groups with each row's search text
+-- What render() gets: the app's name and icon, the groups (without mergeRows' bookkeeping), and the
+-- keyboard to draw. The page matches the filter against the rows' descriptions and keys itself.
 local function pageData(app)
     local groups = groupsFor(app)
     for _, group in ipairs(groups) do
-        for _, row in ipairs(group.rows) do
-            row.search, row.seen = searchText(row, group), nil
-        end
+        for _, row in ipairs(group.rows) do row.seen = nil end
     end
-    return { app = app:name(), icon = iconURL(app:bundleID()) or "", groups = groups }
+    return { app = app:name(), icon = iconURL(app:bundleID()) or "", groups = groups, keyboard = keyboardData() }
 end
 
 -- A complete page showing an app's shortcuts, for previews outside Hammerspoon
@@ -1072,11 +1950,16 @@ local function reveal(size)
     end)
 end
 
--- Grows or shrinks the open window with its content (filtering, Tab), keeping it centred
+-- Grows or shrinks the open window with its content (filtering, unfolding, switching views), keeping it centred
 local function fit(size)
     if not M.visible then return end
     local frame = M.view:frame()
-    M.view:frame(centred(size.width or frame.w, size.height or frame.h))
+    local fitted = centred(size.width or frame.w, size.height or frame.h)
+    -- The keyboard view keeps its top edge, so the keyboard stays put while the list under it changes
+    if size.anchor == "top" then
+        fitted.y = math.max(M.area.y, math.min(frame.y, M.area.y + M.area.h - fitted.h))
+    end
+    M.view:frame(fitted)
 end
 
 local function render(script)
@@ -1165,6 +2048,7 @@ function M.start(mods, key)
     buildReader(function()
         readerReady = true
         setIcon()
+        readTypedKeys()
         prewarm()
     end)
 end

@@ -4,25 +4,25 @@
 # Navigation: Focus left
 alt - h [
     *           : yabai -m window --focus west
-    "Alacritty" : /bin/bash -c "if [ \$(tmux display-message -p '#{pane_at_left}') -ne 1 ]; then tmux select-pane -L; else yabai -m window --focus west || true; fi"
+    "Alacritty" : ~/.config/yabai/focus-pane-or-window.sh west
 ]
 
 # Navigation: Focus down
 alt - j [
     *           : yabai -m window --focus south
-    "Alacritty" : /bin/bash -c "if [ \$(tmux display-message -p '#{pane_at_bottom}') -ne 1 ]; then tmux select-pane -D; else yabai -m window --focus south || true; fi"
+    "Alacritty" : ~/.config/yabai/focus-pane-or-window.sh south
 ]
 
 # Navigation: Focus up
-alt - k [
+alt - u [
     *           : yabai -m window --focus north
-    "Alacritty" : /bin/bash -c "if [ \$(tmux display-message -p '#{pane_at_top}') -ne 1 ]; then tmux select-pane -U; else yabai -m window --focus north || true; fi"
+    "Alacritty" : ~/.config/yabai/focus-pane-or-window.sh north
 ]
 
 # Navigation: Focus right
-alt - l [
+alt - k [
     *           : yabai -m window --focus east
-    "Alacritty" : /bin/bash -c "if [ \$(tmux display-message -p '#{pane_at_right}') -ne 1 ]; then tmux select-pane -R; else yabai -m window --focus east || true; fi"
+    "Alacritty" : ~/.config/yabai/focus-pane-or-window.sh east
 ]
 
 # Windows: Move left
@@ -30,9 +30,9 @@ shift + alt - h : yabai -m window --warp west
 # Windows: Move down
 shift + alt - j : yabai -m window --warp south
 # Windows: Move up
-shift + alt - k : yabai -m window --warp north
+shift + alt - u : yabai -m window --warp north
 # Windows: Move right
-shift + alt - l : yabai -m window --warp east
+shift + alt - k : yabai -m window --warp east
 
 # Windows: Grow left
 shift + alt - a : yabai -m window --resize left:-30:0
@@ -112,9 +112,9 @@ shift + cmd - h : yabai -m window --insert west
 # Layout: Insert down
 shift + cmd - j : yabai -m window --insert south
 # Layout: Insert up
-shift + cmd - k : yabai -m window --insert north
+shift + cmd - u : yabai -m window --insert north
 # Layout: Insert right
-shift + cmd - l : yabai -m window --insert east
+shift + cmd - k : yabai -m window --insert east
 
 # Spaces: Move space left
 hyper - left : yabai -m space --move prev
