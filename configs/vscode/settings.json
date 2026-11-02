@@ -16,7 +16,7 @@
     "path": "/bin/sh",
   },
   "ruby.rubocop.suppressRubocopWarnings": true,
-  "ruby.rubocop.executePath": "~/.asdf/shims/",
+  "ruby.rubocop.executePath": "~/.local/share/mise/shims/",
   "editor.tabSize": 2,
   "git.suggestSmartCommit": false,
   "markdown.extension.toc.updateOnSave": false,

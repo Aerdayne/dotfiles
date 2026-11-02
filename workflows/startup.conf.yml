@@ -24,4 +24,8 @@
     - command: skhd --start-service
       description: Start skhd
 
+- shell:
+    - command: open -ga Hammerspoon
+      description: Start Hammerspoon (app launchers, hyper + space shortcut overlay); it adds itself to the login items
+
 # First run will request Accessibility permissions in System Settings > Privacy & Security

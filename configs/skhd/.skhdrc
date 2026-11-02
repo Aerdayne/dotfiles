@@ -1,6 +1,5 @@
-#!/bin/env sh
-
 # Most of the keybindings and commands are taken from https://github.com/atidyshirt/MacOS-Dotfiles/blob/master/.skhdrc
+# The "# Category: Description" comment above a binding is its label in the Hyper + Space overlay
 
 # Navigation: Focus left
 alt - h [

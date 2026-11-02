@@ -1,0 +1,9 @@
+# Which account a repository uses (name, email, SSH key and GitHub user) follows its remote. The accounts
+# are set up with `git account add` and stay on this Mac, in ~/.config/git/accounts (see README.md here).
+[include]
+	path = ~/.config/git/accounts/default
+	path = ~/.config/git/accounts/config
+
+[user]
+	# A repository without an account can't commit, rather than committing as user@hostname
+	useConfigOnly = true

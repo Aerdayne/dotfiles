@@ -23,14 +23,14 @@
     ~/.config/fish/config.fish:
       path: configs/fish/config.fish
       force: true
-    ~/.config/fish/fish_variables:
-      path: configs/fish/fish_variables
-      force: true
     ~/.config/fish/fish_plugins:
       path: configs/fish/fish_plugins
       force: true
     ~/.config/fish/conf.d:
       path: configs/fish/conf.d
+      force: true
+    ~/.config/fish/themes:
+      path: configs/fish/themes
       force: true
     ~/.config/alacritty/alacritty.toml:
       path: configs/alacritty/alacritty.toml
@@ -52,7 +52,3 @@
 - shell:
     - command: /bin/bash -c '/opt/homebrew/bin/fish -c "fisher update"'
       description: Download fisher packages listed in fish_plugins
-
-- shell:
-    - command: ./configs/asdf/install-plugins.sh
-      description: Install asdf plugins

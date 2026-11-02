@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Runs gh as the GitHub account of what it acts on: the owner given with -R/--repo or as the repository or URL
+# a command works on, else the repository it's run in, else the default account (see configs/git). gh's own
+# active account is used only when there's no default account yet.
+gh=/opt/homebrew/bin/gh
+accounts="$HOME/.config/git/accounts"
+
+# gh auth logs accounts in and out and switches between them, which needs gh's own view of them
+if [ "${1:-}" = auth ] && [ "${2:-}" != git-credential ]; then exec "$gh" "$@"; fi
+
+# The owner of [HOST/]OWNER/NAME or https://github.com/OWNER/…
+owner_in() {
+    local repo=${1#https://}
+    repo=${repo#github.com/}
+    [[ $repo == */* ]] && echo "${repo%%/*}"
+}
+
+owner=""
+previous=""
+for arg in "$@"; do
+    case $previous in -R | --repo) owner=$(owner_in "$arg") ;; esac
+    case $arg in --repo=*) owner=$(owner_in "${arg#--repo=}") ;; esac
+    previous=$arg
+done
+# gh repo view OWNER/NAME, gh pr checkout https://github.com/OWNER/NAME/pull/1 and the like. Only this position:
+# a URL elsewhere, in an issue's body say, isn't what the command acts on.
+if [ -z "$owner" ] && [[ ${3:-} =~ ^(https://github\.com/)?[A-Za-z0-9-]+/[A-Za-z0-9._-]+ ]]; then owner=$(owner_in "$3"); fi
+
+user=""
+if [ -n "$owner" ]; then
+    account=$(git config -f "$accounts/config" --get "includeIf.hasconfig:remote.*.url:git@github.com:$owner/**.path" 2> /dev/null)
+    [ -n "$account" ] && user=$(git config -f "$accounts/$account" --get github.user)
+fi
+[ -n "$user" ] || user=$(git config --get github.user 2> /dev/null)
+
+if [ -n "$user" ] && [ -z "${GH_TOKEN:-}" ]; then
+    if ! GH_TOKEN=$("$gh" auth token --user "$user" 2> /dev/null); then
+        echo "gh: this would act as the GitHub account $user, which isn't logged in to gh: gh auth login" >&2
+        exit 1
+    fi
+    export GH_TOKEN
+fi
+exec "$gh" "$@"

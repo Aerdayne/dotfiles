@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+# Git accounts: the commit author, email, SSH key and GitHub user a repository uses, chosen by who owns it on
+# GitHub. The OWNER is the user or organisation in the repository's URL: github.com/OWNER/REPO.
+#
+#   git account                      the account this repository uses, and why
+#   git account list                 the accounts, and the owners each one is for
+#   git account add ACCOUNT --email EMAIL --github USER [--owner OWNER]... [--author NAME] [--key FILE] [--default]
+#                                    a new account, such as personal or work, for the GitHub user USER. Repositories
+#                                    owned by USER, or by any --owner, use it. Without --key it creates an SSH key,
+#                                    and it adds the key to GitHub when USER is logged in to gh.
+#   git account map ACCOUNT OWNER    every repository owned by OWNER uses ACCOUNT too
+#   git account use ACCOUNT          this repository uses ACCOUNT from now on, whoever owns it
+#   git account reset                this repository goes back to the account for its owner
+#   git account as ACCOUNT COMMAND…  runs one git command as ACCOUNT: git account as work commit -m "…"
+#   git account default ACCOUNT      anything without an account fetches with ACCOUNT's key, and gh acts as it
+#   git account upload ACCOUNT       adds ACCOUNT's SSH key to its GitHub account through gh
+#
+# Each account is a file in ~/.config/git/accounts, which also holds `config` (owners to accounts) and
+# `default` (the default account's key and GitHub user).
+set -euo pipefail
+
+dir="$HOME/.config/git/accounts"
+mapping="$dir/config"
+gh=/opt/homebrew/bin/gh
+
+die() {
+    echo "git account: $*" >&2
+    exit 1
+}
+
+usage() {
+    awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"
+    exit 1
+}
+
+# The accounts, comma-separated
+accounts() {
+    local file names=()
+    for file in "$dir"/*; do
+        [ -f "$file" ] || continue
+        case $(basename "$file") in config | default) ;; *) names+=("$(basename "$file")") ;; esac
+    done
+    local IFS=,
+    echo "${names[*]-}" | sed 's/,/, /g'
+}
+
+check_account() {
+    [ -f "$dir/$1" ] && [ "$1" != config ] && [ "$1" != default ] ||
+        die "there's no account called $1. The accounts are: $(accounts)"
+}
+
+check_repository() {
+    git rev-parse --git-dir > /dev/null 2>&1 || die "this isn't a git repository"
+}
+
+# Removes an account chosen with git account use from this repository's config
+clear_choice() {
+    local path
+    for path in $(git config --local --get-all include.path 2> /dev/null || true); do
+        case $path in "$dir"/*) git config --local --unset-all --fixed-value include.path "$path" ;; esac
+    done
+}
+
+key_of() {
+    git config -f "$dir/$1" core.sshCommand | awk -F"'" '{print $2}'
+}
+
+set_default() {
+    git config -f "$dir/default" core.sshCommand "$(git config -f "$dir/$1" core.sshCommand)"
+    git config -f "$dir/default" github.user "$(git config -f "$dir/$1" github.user)"
+}
+
+# The owners of a repository's remotes, one per line, whatever form the URL takes
+remote_owners() {
+    git remote -v | awk '{print $2}' | sed -nE 's#^.*github\.com[^:/]*[:/]([^/]+)/.*#\1#p' | sort -u
+}
+
+upload() {
+    local account=$1 github key token out
+    github=$(git config -f "$dir/$account" github.user)
+    key=$(key_of "$account")
+    if ! token=$("$gh" auth token --user "$github" 2> /dev/null); then
+        echo "$github isn't logged in to gh. Add this key in its Settings > SSH and GPG keys, or log it in with"
+        echo "gh auth login --scopes admin:public_key and run git account upload $account:"
+        echo
+        cat "$key.pub"
+        return
+    fi
+    if out=$(GH_TOKEN=$token "$gh" ssh-key add "$key.pub" --title "$(scutil --get ComputerName 2> /dev/null || hostname -s) ($account)" 2>&1); then
+        if grep -q -i 'already exists' <<< "$out"; then
+            echo "The GitHub account $github has this key already."
+        else
+            echo "Added the key to the GitHub account $github."
+        fi
+    elif grep -q -i 'already in use' <<< "$out"; then
+        die "GitHub has this key on another account; each account needs its own key"
+    else
+        echo "Couldn't add the key to $github: $out"
+        echo "If gh's token lacks the admin:public_key scope: gh auth switch --user $github, gh auth refresh --scopes"
+        echo "admin:public_key, then git account upload $account. Or add this key in its Settings > SSH and GPG keys:"
+        echo
+        cat "$key.pub"
+    fi
+}
+
+# The account an owner is mapped to, if any
+account_of() {
+    git config -f "$mapping" --get "includeIf.hasconfig:remote.*.url:git@github.com:$1/**.path" 2>/dev/null || true
+}
+
+# The owners mapped to an account, comma-separated
+owners_of() {
+    git config -f "$mapping" --get-regexp '^includeif\.hasconfig:remote\.\*\.url:git@github\.com:' 2>/dev/null |
+        awk -v account="$1" '$2 == account { sub(/^[^:]*:[^:]*:[^:]*:/, "", $1); sub(/\/\*\*\.path$/, "", $1); print $1 }' |
+        paste -sd, - | sed 's/,/, /g'
+}
+
+map() {
+    local account=$1 owner=$2 current
+    [[ $owner =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ ]] ||
+        die "$owner isn't an owner: that's the GitHub user or organisation in github.com/OWNER/REPO, such as python"
+    current=$(account_of "$owner")
+    [ -z "$current" ] || die "$owner is already mapped to the account $current"
+    # Both URL forms, so a clone over HTTPS gets the account too; it's then fetched over SSH with its key
+    git config -f "$mapping" "includeIf.hasconfig:remote.*.url:git@github.com:$owner/**.path" "$account"
+    git config -f "$mapping" "includeIf.hasconfig:remote.*.url:https://github.com/$owner/**.path" "$account"
+    git config -f "$mapping" "url.git@github.com:$owner/.insteadOf" "https://github.com/$owner/"
+}
+
+add() {
+    local account=${1:-} email="" github="" author="" key="" default=false owners=() owner
+    [ $# -gt 0 ] && shift
+    [[ $account =~ ^[a-z0-9][a-z0-9-]*$ ]] && [ "$account" != config ] && [ "$account" != default ] ||
+        die "an account needs a name of lowercase letters, digits and dashes, such as personal or work"
+    while [ $# -gt 0 ]; do
+        if [ "$1" = --default ]; then
+            default=true
+            shift
+            continue
+        fi
+        [ $# -ge 2 ] || die "$1 needs a value"
+        case $1 in
+            --email) email=$2 ;;
+            --github) github=$2 ;;
+            --owner) owners+=("$2") ;;
+            --author) author=$2 ;;
+            --key) key=${2/#\~/$HOME} ;;
+            *) die "unknown option $1" ;;
+        esac
+        shift 2
+    done
+    [ ! -e "$dir/$account" ] || die "there's already an account called $account"
+    [[ $email == ?*@?*.?* ]] || die "--email needs the email address commits should use"
+    [[ $github =~ ^[A-Za-z0-9][A-Za-z0-9-]*$ ]] || die "--github needs the account's GitHub username"
+    owners=("$github" ${owners[@]+"${owners[@]}"})
+    for owner in "${owners[@]}"; do
+        [ -z "$(account_of "$owner")" ] || die "$owner is already mapped to the account $(account_of "$owner")"
+    done
+
+    if [ -z "$key" ]; then
+        key="$HOME/.ssh/git-$account"
+        [ -e "$key" ] || ssh-keygen -t ed25519 -C "$email" -f "$key"
+    fi
+    [ -f "$key" ] && [ -f "$key.pub" ] || die "there's no SSH key at $key (with $key.pub next to it)"
+
+    mkdir -p "$dir"
+    git config -f "$dir/$account" user.name "${author:-$github}"
+    git config -f "$dir/$account" user.email "$email"
+    git config -f "$dir/$account" core.sshCommand "ssh -i '$key' -o IdentitiesOnly=yes"
+    git config -f "$dir/$account" github.user "$github"
+    for owner in "${owners[@]}"; do map "$account" "$owner"; done
+    if $default; then set_default "$account"; fi
+
+    echo "Added the account $account, for repositories owned by $(owners_of "$account")."
+    upload "$account"
+}
+
+status() {
+    check_repository
+    local origins matched email last owner first
+    # Where user.email is set, in the order git reads it: the last one wins
+    origins=$(git config --show-origin --get-all user.email 2>/dev/null | cut -f1 | sed 's/^file://' | awk '!seen[$0]++' || true)
+    matched=$(grep "^$dir/" <<< "$origins" | xargs -n1 basename 2>/dev/null | paste -sd, - | sed 's/,/, /g' || true)
+    email=$(git config --get user.email 2>/dev/null || true)
+    if [ -z "$email" ]; then
+        owner=$(remote_owners | paste -sd, - | sed 's/,/, /g')
+        first=$(accounts | cut -d, -f1)
+        echo "No account, so this repository can't commit: no account is for its owner (${owner:-none on GitHub})."
+        echo "  git account use ${first:-ACCOUNT}           commit here as ${first:-that account}"
+        [ -n "$owner" ] && echo "  git account map ${first:-ACCOUNT} ${owner%%,*}    every repository owned by ${owner%%,*} uses ${first:-it}"
+        echo "Accounts: $(accounts)"
+        return
+    fi
+    last=$(tail -1 <<< "$origins")
+    if git config --local --get-all include.path 2> /dev/null | grep -q -x -F "$last"; then
+        echo "$(basename "$last"), chosen for this repository: $(git config --get github.user) <$email>"
+        echo "git account reset goes back to the account for its owner."
+        return
+    fi
+    case $last in
+        "$dir"/*) echo "$(basename "$last"), as the account for $(remote_owners | paste -sd, - | sed 's/,/, /g'): $(git config --get github.user) <$email>" ;;
+        *) echo "Set in $last rather than by an account: $(git config --get user.name) <$email>" ;;
+    esac
+    if [[ $matched == *,* ]]; then
+        echo "Several accounts match this repository's owners ($matched); the last one wins."
+        echo "Choose one with git account use ACCOUNT."
+    fi
+}
+
+list() {
+    local file account
+    [ -d "$dir" ] || die "there are no accounts yet (see git account add)"
+    for file in "$dir"/*; do
+        account=$(basename "$file")
+        [ "$account" = config ] || [ "$account" = default ] && continue
+        echo "$account: $(git config -f "$file" github.user) <$(git config -f "$file" user.email)>, for repositories owned by $(owners_of "$account")"
+    done
+    [ -f "$dir/default" ] && echo "Default: $(git config -f "$dir/default" github.user), with the key $(git config -f "$dir/default" core.sshCommand | awk -F"'" '{print $2}')"
+    return 0
+}
+
+case ${1:-} in
+    "") status ;;
+    list) list ;;
+    add) shift; add "$@" ;;
+    map) [ $# -eq 3 ] || usage; check_account "$2"; map "$2" "$3"; echo "Repositories owned by $3 now use the account $2." ;;
+    default) [ $# -eq 2 ] || usage; check_account "$2"; set_default "$2"; echo "The default account is now $2." ;;
+    upload) [ $# -eq 2 ] || usage; check_account "$2"; upload "$2" ;;
+    use)
+        [ $# -eq 2 ] || usage
+        check_account "$2"
+        check_repository
+        clear_choice
+        git config --local --add include.path "$dir/$2"
+        status
+        ;;
+    reset)
+        [ $# -eq 1 ] || usage
+        check_repository
+        clear_choice
+        status
+        ;;
+    as)
+        [ $# -ge 3 ] || usage
+        check_account "$2"
+        account=$2
+        shift 2
+        exec git -c include.path="$dir/$account" "$@"
+        ;;
+    *) usage ;;
+esac

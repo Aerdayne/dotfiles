@@ -1,6 +1,4 @@
 ---
-# MacOS only
-
 - defaults:
     shell:
       stdout: true
@@ -8,7 +6,7 @@
 
 - shell:
     - command: /bin/bash -c 'if type xcode-select >/dev/null 2>&1; then echo 0; else xcode-select --install &>/dev/null; fi'
-      description: Install MacOS devtools
+      description: Install the Xcode command line tools
 
 # Homebrew's installer needs sudo, and unattended (NONINTERACTIVE) it won't ask for the password, so sudo asks first
 - shell:
@@ -33,4 +31,4 @@
 
 - shell:
     - command: ./configs/macos/set-defaults.sh
-      description: Set MacOS defaults
+      description: Set macOS defaults

@@ -19,7 +19,6 @@
     - "~/.hammerspoon"
     - "~/Library/Application Support/Code/User"
     - "~/Library/Application Support/k9s/skins"
-    - "~/.local/share/navi/cheats"
     - "~/.tmux/scripts"
 
 - link:
@@ -35,15 +34,23 @@
     ~/.config/yabai/fix-notch-shield.sh: configs/yabai/fix-notch-shield.sh
     ~/.skhdrc: configs/skhd/.skhdrc
     ~/.hammerspoon/init.lua: configs/hammerspoon/init.lua
+    ~/.hammerspoon/shortcuts.lua: configs/hammerspoon/shortcuts.lua
+    ~/.hammerspoon/menu-shortcuts.swift: configs/hammerspoon/menu-shortcuts.swift
     ~/.tmux.conf: configs/tmux/.tmux.conf
     ~/.tmux/scripts/sessionizer.sh: configs/tmux/scripts/sessionizer.sh
+    ~/.local/bin/moonlander: configs/moonlander/moonlander
+    ~/.config/mise/config.toml: configs/mise/config.toml
+    ~/.config/git/config: configs/git/config
+    ~/.config/git/ignore: configs/git/ignore
+    ~/.local/bin/git-account: configs/git/git-account
+    ~/.local/bin/gh: configs/git/gh
 
 - shell:
+  - command: '[ -f ~/.config/git/accounts/default ] || echo "No git accounts on this Mac yet: see configs/git/README.md"'
+    description: Check for git accounts
   - command: bash -l './configs/vscode/install_extensions.sh'
     description: Install VSCode extensions
   - command: git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm 2>/dev/null || true
     description: Install TPM (Tmux Plugin Manager)
   - command: ~/.tmux/plugins/tpm/bin/install_plugins
     description: Install tmux plugins
-  - command: bash './configs/navi/generate-cheats.sh' ~/.local/share/navi/cheats/dotfiles.cheat
-    description: Generate navi cheatsheet from config files

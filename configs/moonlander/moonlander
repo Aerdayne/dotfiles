@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Flashes the Moonlander with the latest compiled revision of the Oryx layout plus the code in keymap/, built
+# with ZSA's QMK fork in a container.
+#
+#   moonlander                   build and flash (press the reset key on the Media layer when zapp waits)
+#   moonlander --reset-lighting  also put the lighting settings back to the defaults in keymap/config.h
+#   moonlander --no-flash        only build
+set -euo pipefail
+
+layout=oq3xD                 # configure.zsa.io/moonlander/layouts/oq3xD
+keyboard=zsa/moonlander/reva # the board is revision A
+here=$(dirname "$(realpath "$0")")
+qmk=${ZSA_QMK_HOME:-$HOME/.cache/zsa-qmk}
+keymap=$qmk/keyboards/zsa/moonlander/keymaps/$layout
+
+flash=true
+reset=0
+for arg in "$@"; do
+    case $arg in
+        --no-flash) flash=false ;;
+        --reset-lighting) reset=$((RANDOM % 65535 + 1)) ;;
+        *) sed -n '2,7s/^# \{0,1\}//p' "$0" && exit 1 ;;
+    esac
+done
+
+# The compiler runs in a container, which OrbStack provides along with the docker command
+docker info >/dev/null 2>&1 || orb start
+
+# The latest compiled revision, and the firmware version Oryx built it for, which is the fork's branch
+query='query($id: String!) { layout(hashId: $id, geometry: "moonlander", revisionId: "latest") { revision { hashId qmkVersion title createdAt } } }'
+revision=$(jq -n --arg query "$query" --arg id "$layout" '{query: $query, variables: {id: $id}}' |
+    curl -fsS https://oryx.zsa.io/graphql -H 'Content-Type: application/json' --data @- | jq '.data.layout.revision')
+branch=firmware$(jq -r '.qmkVersion | tonumber | floor' <<<"$revision")
+echo "Oryx revision $(jq -r '"\(.hashId) from \(.createdAt): \(.title)"' <<<"$revision")"
+
+if [ ! -d "$qmk/.git" ]; then
+    git clone --quiet --depth 1 --branch "$branch" https://github.com/zsa/qmk_firmware.git "$qmk"
+fi
+git -C "$qmk" fetch --quiet --depth 1 origin "$branch"
+git -C "$qmk" checkout --quiet -B "$branch" FETCH_HEAD
+git -C "$qmk" submodule update --quiet --init --recursive --depth 1
+
+# Oryx's source, with the files in keymap/ added; config.h and rules.mk go at the end of Oryx's
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+curl -fsSL "https://oryx.zsa.io/source/$(jq -r .hashId <<<"$revision")" -o "$tmp/source.zip"
+rm -rf "$keymap"
+mkdir -p "$keymap"
+unzip -qj "$tmp/source.zip" '*_source/*' -d "$keymap"
+for file in "$here"/keymap/*; do
+    case $(basename "$file") in
+        config.h | rules.mk) printf '\n' | cat - "$file" >>"$keymap/$(basename "$file")" ;;
+        *) cp "$file" "$keymap/" ;;
+    esac
+done
+if [ "$reset" != 0 ]; then
+    printf '#define LIGHTING_RESET %d\n' "$reset" >>"$keymap/config.h"
+fi
+
+docker build --quiet --tag moonlander-qmk "$here" >/dev/null
+docker run --rm --volume "$qmk:/qmk_firmware" moonlander-qmk qmk compile --keyboard "$keyboard" --keymap "$layout"
+
+firmware=$qmk/${keyboard//\//_}_$layout.bin
+if $flash; then
+    zapp flash "$firmware"
+else
+    echo "Firmware: $firmware"
+fi

@@ -97,8 +97,8 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad UserPreference
 # Dock
 defaults write com.apple.dock "autohide" -bool "true" # Autohide Dock
 defaults write com.apple.dock "autohide-time-modifier" -float 0 # Make Dock appear and disappear instantly
-defaults write com.apple.dock "expose-animation-duration" -float 0 # Minimize Mission Control/Expose animation duration
-defaults write com.apple.dock "mineffect" -string "scale" # Mission Control animations speed up
+defaults write com.apple.dock "expose-animation-duration" -float 0 # Open Mission Control without its animation
+defaults write com.apple.dock "mineffect" -string "scale" # Minimise windows with the quicker scale effect instead of the genie
 # Reduce space transition motion (not always instant). macOS only lets terminals with Full Disk Access write these
 defaults write com.apple.universalaccess reduceMotion -bool true &&
     defaults write com.apple.Accessibility ReduceMotionEnabled -bool true ||

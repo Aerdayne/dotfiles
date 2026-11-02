@@ -1,0 +1,8 @@
+# Default versions outside projects; a project's own mise.toml or .tool-versions overrides them.
+# "latest" means the newest installed version, until `mise upgrade` installs a newer one.
+[tools]
+python = "latest"
+ruby = "latest"
+node = "latest"
+go = "latest"
+rust = "stable"

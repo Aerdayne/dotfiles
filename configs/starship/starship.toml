@@ -13,6 +13,10 @@ $username\
 $docker_context\
 $directory\
 $git_branch\
+${custom.git_account}\
+${custom.git_identity_own}\
+${custom.git_identity_global}\
+${custom.git_account_missing}\
 $git_commit\
 $git_status\
 $git_state\
@@ -106,3 +110,35 @@ format = '[$time]($style) '
 time_format = "%T"
 style = "fg:#ffe585"
 utc_time_offset = "+3"
+
+# The repository's git account (see configs/git): its GitHub user, or the email when the repository sets
+# its own identity. ~/.gitconfig is read after the accounts, so an identity there overrides all of them.
+[custom.git_account]
+when = "git config --show-origin --get user.email | grep -q /.config/git/accounts/"
+command = "echo \"$(git config --get github.user)$(git config --local --get-all include.path | grep -q /.config/git/accounts/ && echo ' (chosen)')\""
+require_repo = true
+shell = ["sh"]
+format = "as [$output]($style) "
+style = "fg:#9cc4ff"
+
+[custom.git_identity_own]
+when = "git config --show-origin --get user.email | grep -v -q -e /.config/git/accounts/ -e /.gitconfig"
+command = "git config --get user.email"
+require_repo = true
+shell = ["sh"]
+format = "as [$output]($style) "
+style = "fg:#ffcb6b"
+
+[custom.git_identity_global]
+when = "git config --show-origin --get user.email | grep -q /.gitconfig"
+require_repo = true
+shell = ["sh"]
+format = "[global git identity]($style) "
+style = "fg:#f07178"
+
+[custom.git_account_missing]
+when = "! git config --get user.email"
+require_repo = true
+shell = ["sh"]
+format = "[no git account]($style) "
+style = "fg:#f07178"

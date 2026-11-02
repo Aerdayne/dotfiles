@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fuzzy-pick a tmux session or a project directory and switch to it.
-# Existing sessions come first, with the active pane's title (e.g. an agent's current task) and directory;
+# Existing sessions come first, with the active pane's title (whatever the running program sets) and directory;
 # the preview shows what's on screen in the session (or the directory's contents).
 # enter: switch to the session, or create one named after the directory    ctrl-x: kill the session
 

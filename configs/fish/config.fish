@@ -1,8 +1,7 @@
-direnv hook fish | source
 starship init fish | source
+status is-interactive; and fish_config theme choose nord-fish3
 
-# Added by OrbStack: command-line tools and integration
-# This won't be added again if you remove it.
+# OrbStack's command-line tools (docker, orb) and shell integration
 source ~/.orbstack/shell/init2.fish 2>/dev/null || :
 
 # Standalone CLI installers put their binaries here
