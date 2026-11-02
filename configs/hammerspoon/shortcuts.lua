@@ -402,10 +402,10 @@ local function tmuxConfig()
                 i = i + 1
             end
             local key = args[i]
-            if keyTable == "prefix" and key then custom[(key:gsub("^'(.+)'$", "%1"))] = true end
-            if comment and key and tables[keyTable] then
-                table.insert(tables[keyTable], { keys = { tmuxKey(key) }, label = comment })
-            end
+            local row = comment and key and tables[keyTable] and { keys = { tmuxKey(key) }, label = comment }
+            if row then table.insert(tables[keyTable], row) end
+            -- Your prefix keys, with their rows when they're described
+            if keyTable == "prefix" and key then custom[(key:gsub("^'(.+)'$", "%1"))] = row or true end
             comment = nil
         elseif not text:match("^unbind") then
             comment = nil -- a comment above an unbind still describes the bind that follows it
@@ -414,15 +414,36 @@ local function tmuxConfig()
     return prefix, tables, custom
 end
 
--- tmux's own bindings that are still in place, with tmux's descriptions
+-- What each prefix key runs, as tmux lists it: "[" -> "copy-mode"
+local function tmuxCommands()
+    local output, ok = hs.execute(TMUX .. " list-keys -T prefix 2>/dev/null")
+    local commands = {}
+    for line in (ok and output or ""):gmatch("[^\n]+") do
+        local key, command = line:match("^bind%-key%s+.-%-T%s+prefix%s+(%S+)%s+(.-)%s*$")
+        if key then commands[key] = command end
+    end
+    return commands
+end
+
+-- tmux's own bindings that are still in place, with tmux's descriptions. One that runs the same command
+-- as one of your bindings joins that binding's row instead: "Enter copy mode" on S and [.
 local function tmuxDefaults(prefix, custom)
     local output, ok = hs.execute(TMUX .. " list-keys -N 2>/dev/null")
     local rows = {}
     if not ok then return rows end
+    local commands, yours = tmuxCommands(), {}
+    for key, row in pairs(custom) do
+        if type(row) == "table" and commands[key] then yours[commands[key]] = row end
+    end
     for line in output:gmatch("[^\n]+") do
         local first, key, note = line:match("^(%S+)%s+(%S+)%s+(.+)$")
         if first == prefix and not custom[key] then
-            table.insert(rows, { keys = { tmuxKey(key) }, label = note })
+            local row = commands[key] and yours[commands[key]]
+            if row then
+                table.insert(row.keys, tmuxKey(key))
+            else
+                table.insert(rows, { keys = { tmuxKey(key) }, label = note })
+            end
         end
     end
     return rows
