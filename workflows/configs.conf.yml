@@ -39,6 +39,7 @@
     ~/.hammerspoon/menu-shortcuts.swift: configs/hammerspoon/menu-shortcuts.swift
     ~/.tmux.conf: configs/tmux/.tmux.conf
     ~/.tmux/scripts/sessionizer.sh: configs/tmux/scripts/sessionizer.sh
+    ~/.tmux/scripts/close-idle-sessions.sh: configs/tmux/scripts/close-idle-sessions.sh
     ~/.local/bin/moonlander: configs/moonlander/moonlander
     ~/.config/mise/config.toml: configs/mise/config.toml
     ~/.config/git/config: configs/git/config
