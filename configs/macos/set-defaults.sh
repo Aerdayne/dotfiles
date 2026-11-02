@@ -18,6 +18,10 @@ tell application "System Events"
 end tell
 EOF
 
+# Dark mode, through System Events like the wallpaper so it applies without logging out
+osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true' ||
+    echo "Warning: could not turn on dark mode. Turn it on in System Settings > Appearance."
+
 sudo --validate
 
 # Disable startup sound
@@ -110,6 +114,7 @@ defaults write com.apple.finder "QuitMenuItem" -bool "true" # Quit option in the
 defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "true" # Show file extensions in the Finder
 defaults write com.apple.finder "AppleShowAllFiles" -bool "true" # Show hidden files in the Finder
 defaults write com.apple.finder "ShowPathbar" -bool "true" # Show path bar in the Finder
+defaults write com.apple.finder "FXPreferredViewStyle" -string "Nlsv" # List view in the Finder, for folders without a view of their own
 defaults write com.apple.finder "CreateDesktop" -bool "false" # Hide all icons on desktop
 
 # Disable macOS Mission Control shortcuts that conflict with skhd
@@ -143,4 +148,5 @@ killall cfprefsd 2>/dev/null || true
 echo ""
 echo "Note: the following settings may need to be set manually:"
 echo "  - Wallpaper rotation: System Settings > Wallpaper"
+echo "  - Input sources (ABC and Russian): System Settings > Keyboard > Text Input"
 echo "  - Input source switching (Ctrl+Cmd+\`): System Settings > Keyboard > Keyboard Shortcuts > Input Sources"

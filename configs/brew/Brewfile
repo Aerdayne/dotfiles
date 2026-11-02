@@ -1,5 +1,4 @@
 tap "asmvik/formulae"
-tap "FelixKratz/formulae"
 tap "anomalyco/tap"
 
 # Shell and terminal
@@ -27,7 +26,6 @@ cask "font-hack-nerd-font"
 # Window management and the menu bar
 brew "asmvik/formulae/yabai"
 brew "asmvik/formulae/skhd"
-brew "felixkratz/formulae/sketchybar"
 cask "hammerspoon"
 cask "monitorcontrol"
 

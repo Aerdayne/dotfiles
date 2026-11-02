@@ -51,7 +51,3 @@
     description: Check for git accounts
   - command: bash -l './configs/vscode/install_extensions.sh'
     description: Install VSCode extensions
-  - command: git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm 2>/dev/null || true
-    description: Install TPM (Tmux Plugin Manager)
-  - command: ~/.tmux/plugins/tpm/bin/install_plugins
-    description: Install tmux plugins
